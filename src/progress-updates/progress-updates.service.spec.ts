@@ -179,6 +179,48 @@ describe('ProgressUpdatesService', () => {
       });
     });
 
+    it('should support creating progress update with direct projectId (Unchecked input)', async () => {
+      const mockResult = { id: 'update-456', status: ReportStatus.DRAFT, projectId: 'proj-456' };
+      mockProgressUpdate.create.mockResolvedValue(mockResult);
+
+      const result = await service.create({
+        projectId: 'proj-456',
+        reportDate: new Date(),
+        physicalProgressPct: 40,
+        stage: 'Planning',
+        milestoneStatus: 'Draft',
+        keyUpdate: 'Draft comments',
+        status: ReportStatus.DRAFT,
+      });
+
+      expect(mockProgressUpdate.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          projectId: 'proj-456',
+          status: ReportStatus.DRAFT,
+        }),
+      });
+      expect(result).toEqual(mockResult);
+    });
+
+    it('should support updating progress update with direct projectId (Unchecked input)', async () => {
+      const mockResult = { id: 'update-456', status: ReportStatus.DRAFT, projectId: 'proj-789' };
+      mockProgressUpdate.update.mockResolvedValue(mockResult);
+
+      const result = await service.update('update-456', {
+        projectId: 'proj-789',
+        physicalProgressPct: 50,
+      });
+
+      expect(mockProgressUpdate.update).toHaveBeenCalledWith({
+        where: { id: 'update-456' },
+        data: expect.objectContaining({
+          projectId: 'proj-789',
+          physicalProgressPct: 50,
+        }),
+      });
+      expect(result).toEqual(mockResult);
+    });
+
     it('should broadcast notification when updating a progress update to submitted', async () => {
       mockProgressUpdate.update.mockResolvedValue({ id: 'update-123', status: ReportStatus.SUBMITTED });
       mockProgressUpdate.findUnique.mockResolvedValue(mockFullRecord);

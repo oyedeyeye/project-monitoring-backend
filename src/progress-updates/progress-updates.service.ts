@@ -39,8 +39,8 @@ export class ProgressUpdatesService {
         }
     }
 
-    async create(data: Prisma.ProgressUpdateCreateInput): Promise<ProgressUpdate> {
-        const record = await this.prisma.progressUpdate.create({ data });
+    async create(data: Prisma.ProgressUpdateUncheckedCreateInput): Promise<ProgressUpdate> {
+        const record = await this.prisma.progressUpdate.create({ data: data as any });
         await this.checkAndBroadcast(record);
         return record;
     }
@@ -152,10 +152,10 @@ export class ProgressUpdatesService {
         });
     }
 
-    async update(id: string, data: Prisma.ProgressUpdateUpdateInput): Promise<ProgressUpdate> {
+    async update(id: string, data: Prisma.ProgressUpdateUncheckedUpdateInput): Promise<ProgressUpdate> {
         const record = await this.prisma.progressUpdate.update({
             where: { id },
-            data
+            data: data as any
         });
         await this.checkAndBroadcast(record);
         return record;

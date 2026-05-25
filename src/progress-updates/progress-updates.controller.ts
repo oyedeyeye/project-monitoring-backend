@@ -15,7 +15,7 @@ export class ProgressUpdatesController {
 
     @Roles(Role.MDA_OFFICER, Role.WEBMASTER_ADMIN)
     @Post()
-    create(@Body() createUpdateDto: Prisma.ProgressUpdateCreateInput) {
+    create(@Body() createUpdateDto: Prisma.ProgressUpdateUncheckedCreateInput) {
         return this.updatesService.create(createUpdateDto);
     }
 
@@ -47,7 +47,7 @@ export class ProgressUpdatesController {
 
     @Roles(Role.MDA_OFFICER, Role.WEBMASTER_ADMIN)
     @Put(':id')
-    update(@Param('id') id: string, @Body() updateDto: Prisma.ProgressUpdateUpdateInput) {
+    update(@Param('id') id: string, @Body() updateDto: Prisma.ProgressUpdateUncheckedUpdateInput) {
         return this.updatesService.update(id, updateDto);
     }
 

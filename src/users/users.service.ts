@@ -44,15 +44,14 @@ export class UsersService {
             ? { profile: { role } }
             : {};
 
-        const [data, total] = await Promise.all([
-            this.prisma.user.findMany({
-                where,
-                skip,
-                take: limit,
-                include: { profile: true },
-            }),
-            this.prisma.user.count({ where }),
-        ]);
+        const data = await this.prisma.user.findMany({
+            where,
+            skip,
+            take: limit,
+            include: { profile: true },
+        });
+
+        const total = await this.prisma.user.count({ where });
 
         return {
             data,

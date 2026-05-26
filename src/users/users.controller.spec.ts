@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 import { Role } from '@prisma/client';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 
 describe('UsersController', () => {
   let controller: UsersController;
@@ -21,6 +22,10 @@ describe('UsersController', () => {
         {
           provide: UsersService,
           useValue: mockUsersService,
+        },
+        {
+          provide: CACHE_MANAGER,
+          useValue: {},
         },
       ],
     }).compile();

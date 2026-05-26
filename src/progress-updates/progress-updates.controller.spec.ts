@@ -49,8 +49,16 @@ describe('ProgressUpdatesController', () => {
       const result = { data: [{ id: '1', status: ReportStatus.SUBMITTED }], meta: { total: 1, page: 2, limit: 10, totalPages: 1 } };
       mockUpdatesService.findAllSubmitted.mockResolvedValue(result);
 
+      expect(await controller.findAll({ user: { role: Role.PPIMU_ADMIN } }, '2', '10', undefined)).toBe(result);
+      expect(mockUpdatesService.findAllSubmitted).toHaveBeenCalledWith({ page: 2, limit: 10, projectId: undefined });
+    });
+
+    it('should return all reports for ppimu admin when projectId is provided', async () => {
+      const result = { data: [{ id: '1' }], meta: { total: 1, page: 2, limit: 10, totalPages: 1 } };
+      mockUpdatesService.findAll.mockResolvedValue(result);
+
       expect(await controller.findAll({ user: { role: Role.PPIMU_ADMIN } }, '2', '10', 'proj-123')).toBe(result);
-      expect(mockUpdatesService.findAllSubmitted).toHaveBeenCalledWith({ page: 2, limit: 10, projectId: 'proj-123' });
+      expect(mockUpdatesService.findAll).toHaveBeenCalledWith({ page: 2, limit: 10, projectId: 'proj-123' });
     });
 
     it('should return mda reports for mda officer', async () => {

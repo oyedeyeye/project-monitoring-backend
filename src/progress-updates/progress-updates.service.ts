@@ -57,16 +57,15 @@ export class ProgressUpdatesService {
             where.projectId = options.projectId;
         }
 
-        const [data, total] = await Promise.all([
-            this.prisma.progressUpdate.findMany({
-                where,
-                include: { project: true },
-                orderBy: { createdAt: 'desc' },
-                skip,
-                take: limit,
-            }),
-            this.prisma.progressUpdate.count({ where }),
-        ]);
+        const data = await this.prisma.progressUpdate.findMany({
+            where,
+            include: { project: true },
+            orderBy: { createdAt: 'desc' },
+            skip,
+            take: limit,
+        });
+
+        const total = await this.prisma.progressUpdate.count({ where });
 
         return {
             data,
@@ -91,16 +90,15 @@ export class ProgressUpdatesService {
             where.projectId = options.projectId;
         }
 
-        const [data, total] = await Promise.all([
-            this.prisma.progressUpdate.findMany({
-                where,
-                include: { project: true },
-                orderBy: { createdAt: 'desc' },
-                skip,
-                take: limit,
-            }),
-            this.prisma.progressUpdate.count({ where }),
-        ]);
+        const data = await this.prisma.progressUpdate.findMany({
+            where,
+            include: { project: true },
+            orderBy: { createdAt: 'desc' },
+            skip,
+            take: limit,
+        });
+
+        const total = await this.prisma.progressUpdate.count({ where });
 
         return {
             data,
@@ -123,16 +121,15 @@ export class ProgressUpdatesService {
             where.projectId = options.projectId;
         }
 
-        const [data, total] = await Promise.all([
-            this.prisma.progressUpdate.findMany({
-                where,
-                include: { project: true },
-                orderBy: { createdAt: 'desc' },
-                skip,
-                take: limit,
-            }),
-            this.prisma.progressUpdate.count({ where }),
-        ]);
+        const data = await this.prisma.progressUpdate.findMany({
+            where,
+            include: { project: true },
+            orderBy: { createdAt: 'desc' },
+            skip,
+            take: limit,
+        });
+
+        const total = await this.prisma.progressUpdate.count({ where });
 
         return {
             data,

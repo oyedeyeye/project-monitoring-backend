@@ -18,15 +18,14 @@ export class ProjectsService {
 
         const where: Prisma.ProjectWhereInput = mdaId ? { mdaId } : {};
 
-        const [data, total] = await Promise.all([
-            this.prisma.project.findMany({
-                where,
-                skip,
-                take: limit,
-                include: { mda: true, progressUpdates: true }
-            }),
-            this.prisma.project.count({ where })
-        ]);
+        const data = await this.prisma.project.findMany({
+            where,
+            skip,
+            take: limit,
+            include: { mda: true, progressUpdates: true }
+        });
+
+        const total = await this.prisma.project.count({ where });
 
         return {
             data,

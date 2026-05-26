@@ -45,7 +45,7 @@ export class ProgressUpdatesController {
         return this.updatesService.findOne(id);
     }
 
-    @Roles(Role.MDA_OFFICER, Role.WEBMASTER_ADMIN)
+    @Roles(Role.MDA_OFFICER, Role.WEBMASTER_ADMIN, Role.PPIMU_ADMIN)
     @Put(':id')
     update(@Param('id') id: string, @Body() updateDto: Prisma.ProgressUpdateUncheckedUpdateInput) {
         return this.updatesService.update(id, updateDto);

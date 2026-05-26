@@ -81,4 +81,14 @@ describe('ProgressUpdatesController', () => {
       expect(mockUpdatesService.update).toHaveBeenCalledWith('update-1', { milestoneStatus: 'Changes Required' });
     });
   });
+
+  describe('Roles Metadata', () => {
+    it('should allow MDA_OFFICER, WEBMASTER_ADMIN, and PPIMU_ADMIN to update progress updates', () => {
+      const roles = Reflect.getMetadata('roles', ProgressUpdatesController.prototype.update);
+      expect(roles).toBeDefined();
+      expect(roles).toContain(Role.MDA_OFFICER);
+      expect(roles).toContain(Role.WEBMASTER_ADMIN);
+      expect(roles).toContain(Role.PPIMU_ADMIN);
+    });
+  });
 });

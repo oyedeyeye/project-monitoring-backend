@@ -34,6 +34,9 @@ export class ProgressUpdatesController {
             return this.updatesService.findAll(options);
         }
         if (req.user.role === Role.PPIMU_ADMIN) {
+            if (projectId) {
+                return this.updatesService.findAll(options);
+            }
             return this.updatesService.findAllSubmitted(options);
         }
         // MDA_OFFICER sees updates from their MDA 

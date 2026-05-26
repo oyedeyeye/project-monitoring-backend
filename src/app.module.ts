@@ -7,6 +7,7 @@ import { AuthModule } from './auth/auth.module';
 import { MdasModule } from './mdas/mdas.module';
 import { ProjectsModule } from './projects/projects.module';
 import { ProgressUpdatesModule } from './progress-updates/progress-updates.module';
+import { IssuesModule } from './issues/issues.module';
 
 import { ConfigModule } from '@nestjs/config';
 import { EmailModule } from './email/email.module';
@@ -15,7 +16,7 @@ import { NotificationsModule } from './notifications/notifications.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
-    PrismaModule, UsersModule, AuthModule, MdasModule, ProjectsModule, ProgressUpdatesModule, EmailModule, NotificationsModule
+    PrismaModule, UsersModule, AuthModule, MdasModule, ProjectsModule, ProgressUpdatesModule, IssuesModule, EmailModule, NotificationsModule
   ],
   controllers: [AppController],
   providers: [AppService],

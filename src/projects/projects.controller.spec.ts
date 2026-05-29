@@ -3,6 +3,7 @@ import { ProjectsController } from './projects.controller';
 import { ProjectsService } from './projects.service';
 import { Role } from '@prisma/client';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { NotFoundException } from '@nestjs/common';
 
 describe('ProjectsController', () => {
   let controller: ProjectsController;
@@ -64,6 +65,33 @@ describe('ProjectsController', () => {
         page: 2,
         limit: 25
       });
+    });
+
+    it('should cap limit at 100 to prevent DoS', async () => {
+      const result = {
+        data: [],
+        meta: { total: 0, page: 1, limit: 100, totalPages: 0 }
+      };
+      mockProjectsService.findAll.mockResolvedValue(result);
+
+      const req = { user: { role: Role.WEBMASTER_ADMIN, mdaId: null } };
+      await controller.findAll(req, undefined, '1', '100000');
+      expect(mockProjectsService.findAll).toHaveBeenCalledWith({
+        mdaId: undefined,
+        page: 1,
+        limit: 100
+      });
+    });
+  });
+
+  describe('findOne', () => {
+    it('should pass req.user to service findOne', async () => {
+      const req = { user: { role: Role.MDA_OFFICER, mdaId: 'mda-1' } };
+      const project = { id: 'proj-1' };
+      mockProjectsService.findOne.mockResolvedValue(project);
+
+      expect(await controller.findOne('proj-1', req)).toBe(project);
+      expect(mockProjectsService.findOne).toHaveBeenCalledWith('proj-1', req.user);
     });
   });
 });

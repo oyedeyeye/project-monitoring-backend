@@ -1,7 +1,9 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query, Req, UseInterceptors } from '@nestjs/common';
 import { ProjectsService } from './projects.service';
-import { Prisma, Role } from '@prisma/client';
+import { Role } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CreateProjectDto } from './dto/create-project.dto';
+import { UpdateProjectDto } from './dto/update-project.dto';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse, ApiBody, ApiParam, ApiQuery } from '@nestjs/swagger';
@@ -21,7 +23,7 @@ export class ProjectsController {
     @ApiBody({ schema: { type: 'object', properties: { title: { type: 'string' }, sector: { type: 'string' }, mdaId: { type: 'string' }, status: { type: 'string' } } } })
     @ApiResponse({ status: 201, description: 'Project successfully created' })
     @ApiResponse({ status: 403, description: 'Forbidden / Invalid Role' })
-    create(@Body() createProjectDto: Prisma.ProjectCreateInput) {
+    create(@Body() createProjectDto: CreateProjectDto) {
         return this.projectsService.create(createProjectDto);
     }
 
@@ -38,12 +40,15 @@ export class ProjectsController {
         @Query('page') pageStr?: string,
         @Query('limit') limitStr?: string,
     ) {
-        const page = pageStr ? parseInt(pageStr, 10) : 1;
-        const limit = limitStr ? parseInt(limitStr, 10) : 25;
-        const userRole = req.user.role;
-        const userMdaId = req.user.mdaId;
+        let page = pageStr ? parseInt(pageStr, 10) : 1;
+        let limit = limitStr ? parseInt(limitStr, 10) : 25;
+        
+        // Prevent DoS: Hard cap limit to max 100
+        if (limit > 100) limit = 100;
+        if (page < 1) page = 1;
 
-        const targetMdaId = userRole === Role.WEBMASTER_ADMIN ? mdaId : userMdaId;
+        const userRole = req.user.role;
+        const targetMdaId = userRole === Role.WEBMASTER_ADMIN ? mdaId : req.user.mdaId;
 
         return this.projectsService.findAll({
             mdaId: targetMdaId,
@@ -57,8 +62,8 @@ export class ProjectsController {
     @ApiParam({ name: 'id', description: 'Project UUID' })
     @ApiResponse({ status: 200, description: 'Project details returned' })
     @ApiResponse({ status: 404, description: 'Project not found' })
-    findOne(@Param('id') id: string) {
-        return this.projectsService.findOne(id);
+    findOne(@Param('id') id: string, @Req() req: any) {
+        return this.projectsService.findOne(id, req.user);
     }
 
     @Roles(Role.WEBMASTER_ADMIN)
@@ -68,7 +73,7 @@ export class ProjectsController {
     @ApiBody({ schema: { type: 'object', properties: { title: { type: 'string' }, status: { type: 'string' } } } })
     @ApiResponse({ status: 200, description: 'Project successfully updated' })
     @ApiResponse({ status: 404, description: 'Project not found' })
-    update(@Param('id') id: string, @Body() updateProjectDto: Prisma.ProjectUpdateInput) {
+    update(@Param('id') id: string, @Body() updateProjectDto: UpdateProjectDto) {
         return this.projectsService.update(id, updateProjectDto);
     }
 

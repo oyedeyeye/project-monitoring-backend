@@ -1,13 +1,15 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { Prisma, Project } from '@prisma/client';
+import { Prisma, Project, Role } from '@prisma/client';
+import { CreateProjectDto } from './dto/create-project.dto';
+import { UpdateProjectDto } from './dto/update-project.dto';
 
 @Injectable()
 export class ProjectsService {
     constructor(private prisma: PrismaService) { }
 
-    async create(data: Prisma.ProjectCreateInput): Promise<Project> {
-        return this.prisma.project.create({ data });
+    async create(data: CreateProjectDto): Promise<Project> {
+        return this.prisma.project.create({ data: data as any });
     }
 
     async findAll(params?: { mdaId?: string; page?: number; limit?: number }): Promise<{ data: Project[]; meta: { total: number; page: number; limit: number; totalPages: number } }> {
@@ -38,17 +40,29 @@ export class ProjectsService {
         };
     }
 
-    async findOne(id: string): Promise<Project | null> {
-        return this.prisma.project.findUnique({
-            where: { id },
+    async findOne(id: string, user: any): Promise<Project> {
+        const whereClause: Prisma.ProjectWhereInput = { id };
+        
+        if (user.role !== Role.WEBMASTER_ADMIN) {
+            whereClause.mdaId = user.mdaId;
+        }
+
+        const project = await this.prisma.project.findFirst({
+            where: whereClause,
             include: { mda: true, progressUpdates: true }
         });
+
+        if (!project) {
+            throw new NotFoundException('Project not found or access denied');
+        }
+
+        return project;
     }
 
-    async update(id: string, data: Prisma.ProjectUpdateInput): Promise<Project> {
+    async update(id: string, data: UpdateProjectDto): Promise<Project> {
         return this.prisma.project.update({
             where: { id },
-            data,
+            data: data as any,
         });
     }
 

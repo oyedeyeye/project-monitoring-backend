@@ -18,9 +18,9 @@ describe('AuthService', () => {
     };
     
     emailService = {
-      sendPasswordResetEmail: jest.fn(),
-      sendPasswordSetupEmail: jest.fn(),
-      sendAccountCreatedEmail: jest.fn(),
+      sendPasswordResetEmail: jest.fn().mockResolvedValue(true),
+      sendPasswordSetupEmail: jest.fn().mockResolvedValue(true),
+      sendAccountCreatedEmail: jest.fn().mockResolvedValue(true),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -95,9 +95,10 @@ describe('AuthService', () => {
     expect(emailService.sendPasswordResetEmail).toHaveBeenCalled();
   });
 
-  it('should throw error if email not found for forgot password', async () => {
+  it('should return generic message if email not found for forgot password (prevent enumeration)', async () => {
     usersService.findByEmail.mockResolvedValue(null);
-    await expect(service.forgotPassword('test@ppmiu.ondo.gov.ng')).rejects.toThrow();
+    const result = await service.forgotPassword('test@ppmiu.ondo.gov.ng');
+    expect(result).toEqual({ message: 'If the email is registered, a reset link will be sent.' });
   });
 
   it('should throw error if token is invalid or expired', async () => {

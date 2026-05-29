@@ -44,6 +44,7 @@ export class AuthService {
         let userCreateInput: Prisma.UserCreateInput;
         const hasPassword = data.password && data.password.trim() !== '';
 
+        let rawSetupToken: string | null = null;
         if (hasPassword) {
             const passwordHash = await bcrypt.hash(data.password, 10);
             userCreateInput = {
@@ -61,14 +62,15 @@ export class AuthService {
             };
         } else {
             // Generate a setup token (fallback for passwordless creation)
-            const setupToken = crypto.randomBytes(32).toString('hex');
+            rawSetupToken = crypto.randomBytes(32).toString('hex');
+            const hashedSetupToken = crypto.createHash('sha256').update(rawSetupToken).digest('hex');
             const tokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
             const placeholderHash = await bcrypt.hash(crypto.randomBytes(16).toString('hex'), 10);
 
             userCreateInput = {
                 email: data.email,
                 passwordHash: placeholderHash,
-                resetPasswordToken: setupToken,
+                resetPasswordToken: hashedSetupToken,
                 resetPasswordExpires: tokenExpires,
                 profile: {
                     create: {
@@ -91,17 +93,14 @@ export class AuthService {
                 const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
                 console.log(`\n👉 [DEVELOPMENT BACKUP CREDENTIALS] Email: ${user.email} | Password: ${data.password}\nLogin Link: ${frontendUrl}\n`);
             }
-        } else {
+        } else if (rawSetupToken) {
             // Setup token flow
             try {
-                // We need to fetch setupToken back from input or just keep it local
-                const setupToken = (userCreateInput as any).resetPasswordToken;
-                await this.emailService.sendPasswordSetupEmail(user.email, setupToken);
+                await this.emailService.sendPasswordSetupEmail(user.email, rawSetupToken);
             } catch (error) {
-                const setupToken = (userCreateInput as any).resetPasswordToken;
                 console.error(`[AuthService] WARNING: Failed to send password setup email to ${user.email} (SMTP connection/firewall issue).`);
                 const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-                console.log(`\n👉 [DEVELOPMENT BACKUP LINK] Click here to setup password for ${user.email}:\n${frontendUrl}/setup-password?token=${setupToken}\n`);
+                console.log(`\n👉 [DEVELOPMENT BACKUP LINK] Click here to setup password for ${user.email}:\n${frontendUrl}/setup-password?token=${rawSetupToken}\n`);
             }
         }
 
@@ -112,31 +111,33 @@ export class AuthService {
 
     async forgotPassword(email: string) {
         const user = await this.usersService.findByEmail(email);
+        const genericMessage = { message: 'If the email is registered, a reset link will be sent.' };
+        
         if (!user) {
-            throw new UnauthorizedException('If the email is registered, a reset link will be sent.');
+            return genericMessage;
         }
 
         const resetToken = crypto.randomBytes(32).toString('hex');
+        const hashedResetToken = crypto.createHash('sha256').update(resetToken).digest('hex');
         const tokenExpires = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
 
         await this.usersService.update(user.id, {
-            resetPasswordToken: resetToken,
+            resetPasswordToken: hashedResetToken,
             resetPasswordExpires: tokenExpires,
         });
 
-        try {
-            await this.emailService.sendPasswordResetEmail(user.email, resetToken);
-        } catch (error) {
+        this.emailService.sendPasswordResetEmail(user.email, resetToken).catch(error => {
             console.error(`[AuthService] WARNING: Failed to send password reset email to ${user.email} (SMTP connection/firewall issue).`);
             const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
             console.log(`\n👉 [DEVELOPMENT BACKUP LINK] Click here to reset password for ${user.email}:\n${frontendUrl}/reset-password?token=${resetToken}\n`);
-        }
+        });
 
-        return { message: 'If the email is registered, a reset link will be sent.' };
+        return genericMessage;
     }
 
     async resetPassword(token: string, newPassword: string) {
-        const user = await this.usersService.findByResetToken(token);
+        const hashedResetToken = crypto.createHash('sha256').update(token).digest('hex');
+        const user = await this.usersService.findByResetToken(hashedResetToken);
         
         if (!user || !user.resetPasswordExpires || user.resetPasswordExpires < new Date()) {
             throw new UnauthorizedException('Invalid or expired reset token');

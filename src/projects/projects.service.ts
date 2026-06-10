@@ -41,7 +41,7 @@ export class ProjectsService {
     }
 
     async findOne(id: string, user: any): Promise<Project> {
-        const whereClause: Prisma.ProjectWhereInput = { id };
+        const whereClause: Prisma.ProjectWhereInput = { projectId: id };
         
         if (user.role !== Role.WEBMASTER_ADMIN) {
             whereClause.mdaId = user.mdaId;
@@ -61,14 +61,14 @@ export class ProjectsService {
 
     async update(id: string, data: UpdateProjectDto): Promise<Project> {
         return this.prisma.project.update({
-            where: { id },
+            where: { projectId: id },
             data: data as any,
         });
     }
 
     async remove(id: string): Promise<Project> {
         return this.prisma.project.delete({
-            where: { id },
+            where: { projectId: id },
         });
     }
 }

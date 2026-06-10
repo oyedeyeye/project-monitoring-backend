@@ -57,33 +57,33 @@ export class ProjectsController {
         });
     }
 
-    @Get(':id')
+    @Get(':projectId')
     @ApiOperation({ summary: 'Get project by ID' })
-    @ApiParam({ name: 'id', description: 'Project UUID' })
+    @ApiParam({ name: 'projectId', description: 'Project UUID' })
     @ApiResponse({ status: 200, description: 'Project details returned' })
     @ApiResponse({ status: 404, description: 'Project not found' })
-    findOne(@Param('id') id: string, @Req() req: any) {
+    findOne(@Param('projectId') id: string, @Req() req: any) {
         return this.projectsService.findOne(id, req.user);
     }
 
     @Roles(Role.WEBMASTER_ADMIN)
-    @Patch(':id')
+    @Patch(':projectId')
     @ApiOperation({ summary: 'Update a project' })
-    @ApiParam({ name: 'id', description: 'Project UUID' })
+    @ApiParam({ name: 'projectId', description: 'Project UUID' })
     @ApiBody({ schema: { type: 'object', properties: { title: { type: 'string' }, status: { type: 'string' } } } })
     @ApiResponse({ status: 200, description: 'Project successfully updated' })
     @ApiResponse({ status: 404, description: 'Project not found' })
-    update(@Param('id') id: string, @Body() updateProjectDto: UpdateProjectDto) {
+    update(@Param('projectId') id: string, @Body() updateProjectDto: UpdateProjectDto) {
         return this.projectsService.update(id, updateProjectDto);
     }
 
     @Roles(Role.WEBMASTER_ADMIN)
-    @Delete(':id')
+    @Delete(':projectId')
     @ApiOperation({ summary: 'Delete a project' })
-    @ApiParam({ name: 'id', description: 'Project UUID' })
+    @ApiParam({ name: 'projectId', description: 'Project UUID' })
     @ApiResponse({ status: 200, description: 'Project successfully deleted' })
     @ApiResponse({ status: 404, description: 'Project not found' })
-    remove(@Param('id') id: string) {
+    remove(@Param('projectId') id: string) {
         return this.projectsService.remove(id);
     }
 }

@@ -37,7 +37,7 @@ describe('ProjectsController', () => {
   describe('findAll', () => {
     it('should return paginated projects', async () => {
       const result = {
-        data: [{ id: '1', title: 'Test Project' }],
+        data: [{ projectId: '1', title: 'Test Project' }],
         meta: { total: 1, page: 1, limit: 25, totalPages: 1 }
       };
       mockProjectsService.findAll.mockResolvedValue(result);
@@ -53,7 +53,7 @@ describe('ProjectsController', () => {
 
     it('should pass users mdaId to service if not WEBMASTER_ADMIN', async () => {
       const result = {
-        data: [{ id: '1', title: 'MDA Project' }],
+        data: [{ projectId: '1', title: 'MDA Project' }],
         meta: { total: 1, page: 1, limit: 25, totalPages: 1 }
       };
       mockProjectsService.findAll.mockResolvedValue(result);
@@ -87,7 +87,7 @@ describe('ProjectsController', () => {
   describe('findOne', () => {
     it('should pass req.user to service findOne', async () => {
       const req = { user: { role: Role.MDA_OFFICER, mdaId: 'mda-1' } };
-      const project = { id: 'proj-1' };
+      const project = { projectId: 'proj-1' };
       mockProjectsService.findOne.mockResolvedValue(project);
 
       expect(await controller.findOne('proj-1', req)).toBe(project);

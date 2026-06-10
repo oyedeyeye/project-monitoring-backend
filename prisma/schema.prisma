@@ -40,7 +40,7 @@ model MDA {
 }
 
 model Project {
-  id                 String           @id @default(uuid()) @map("project_id")
+  projectId          String           @id @default(uuid()) @map("project_id")
   mdaId              String           @map("mda_id")
   mda                MDA              @relation(fields: [mdaId], references: [id])
   title              String
@@ -67,7 +67,7 @@ model Project {
 model ProgressUpdate {
   id                  String   @id @default(uuid())
   projectId           String   @map("project_id")
-  project             Project  @relation(fields: [projectId], references: [id])
+  project             Project  @relation(fields: [projectId], references: [projectId])
   reportDate          DateTime @map("report_date")
   physicalProgressPct Float    @map("physical_progress_pct")
   stage               String
@@ -85,7 +85,7 @@ model ProgressUpdate {
 model FinanceRecord {
   id             String   @id @default(uuid())
   projectId      String   @map("project_id")
-  project        Project  @relation(fields: [projectId], references: [id])
+  project        Project  @relation(fields: [projectId], references: [projectId])
   budgetYear     Int      @map("budget_year")
   releaseToDate  Decimal  @map("release_to_date") @db.Decimal(15, 2)
   paymentsToDate Decimal  @map("payments_to_date") @db.Decimal(15, 2)
@@ -98,7 +98,7 @@ model FinanceRecord {
 model Issue {
   id            String   @id @default(uuid())
   projectId     String   @map("project_id")
-  project       Project  @relation(fields: [projectId], references: [id])
+  project       Project  @relation(fields: [projectId], references: [projectId])
   logDate       DateTime @map("log_date")
   issueCategory String   @map("issue_category")
   issueItem     String   @map("issue_item")

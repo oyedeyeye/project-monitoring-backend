@@ -59,7 +59,7 @@ export class ProgressUpdatesService {
 
         const data = await this.prisma.progressUpdate.findMany({
             where,
-            include: { project: true },
+            include: { project: true, issues: true },
             orderBy: { createdAt: 'desc' },
             skip,
             take: limit,
@@ -92,7 +92,7 @@ export class ProgressUpdatesService {
 
         const data = await this.prisma.progressUpdate.findMany({
             where,
-            include: { project: true },
+            include: { project: true, issues: true },
             orderBy: { createdAt: 'desc' },
             skip,
             take: limit,
@@ -123,7 +123,7 @@ export class ProgressUpdatesService {
 
         const data = await this.prisma.progressUpdate.findMany({
             where,
-            include: { project: true },
+            include: { project: true, issues: true },
             orderBy: { createdAt: 'desc' },
             skip,
             take: limit,
@@ -145,7 +145,7 @@ export class ProgressUpdatesService {
     async findOne(id: string): Promise<ProgressUpdate | null> {
         return this.prisma.progressUpdate.findUnique({
             where: { id },
-            include: { project: true }
+            include: { project: true, issues: true }
         });
     }
 

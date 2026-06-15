@@ -13,7 +13,7 @@ async function bootstrap() {
 
   app.enableCors({
     origin: [
-      'https://project-monitoring-dashboard-*.vercel.app/',
+      'https://project-monitoring-dashboard-nhvra7pvj.vercel.app/',
       'https://project-monitoring-dashboard-hazel.vercel.app',
       'http://localhost:5173', // Keep local dev access if needed
       'http://localhost:3000'

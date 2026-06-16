@@ -53,7 +53,7 @@ describe('ProgressUpdatesService', () => {
 
       expect(mockProgressUpdate.findMany).toHaveBeenCalledWith({
         where: { projectId: 'proj-1' },
-        include: { project: true },
+        include: { project: true, issues: true },
         orderBy: { createdAt: 'desc' },
         skip: 10,
         take: 10,
@@ -83,7 +83,7 @@ describe('ProgressUpdatesService', () => {
 
       expect(mockProgressUpdate.findMany).toHaveBeenCalledWith({
         where: { status: ReportStatus.SUBMITTED },
-        include: { project: true },
+        include: { project: true, issues: true },
         orderBy: { createdAt: 'desc' },
         skip: 0,
         take: 5,
@@ -116,7 +116,7 @@ describe('ProgressUpdatesService', () => {
           projectId: 'proj-3',
           project: { mdaId: 'mda-123' },
         },
-        include: { project: true },
+        include: { project: true, issues: true },
         orderBy: { createdAt: 'desc' },
         skip: 30,
         take: 15,

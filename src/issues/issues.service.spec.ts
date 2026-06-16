@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { IssuesService } from './issues.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { Prisma } from '@prisma/client';
+import { Prisma, Role } from '@prisma/client';
 
 describe('IssuesService', () => {
   let service: IssuesService;
@@ -40,10 +40,18 @@ describe('IssuesService', () => {
       ];
       (prismaService.issue.findMany as jest.Mock).mockResolvedValue(mockIssues);
 
-      const result = await service.findAll('proj1');
+      const user = { role: Role.WEBMASTER_ADMIN };
+      const result = await service.findAll(user as any, 'proj1');
       expect(result).toEqual(mockIssues);
       expect(prismaService.issue.findMany).toHaveBeenCalledWith({
         where: { projectId: 'proj1' },
+        include: {
+          project: {
+            include: {
+              mda: true,
+            },
+          },
+        },
         orderBy: { createdAt: 'desc' },
       });
     });

@@ -43,9 +43,10 @@ describe('ProjectsController', () => {
       mockProjectsService.findAll.mockResolvedValue(result);
 
       const req = { user: { role: Role.WEBMASTER_ADMIN, mdaId: null } };
-      expect(await controller.findAll(req, undefined, '1', '25')).toBe(result);
+      expect(await controller.findAll(req, undefined, undefined, '1', '25')).toBe(result);
       expect(mockProjectsService.findAll).toHaveBeenCalledWith({
         mdaId: undefined,
+        status: undefined,
         page: 1,
         limit: 25
       });
@@ -59,9 +60,10 @@ describe('ProjectsController', () => {
       mockProjectsService.findAll.mockResolvedValue(result);
 
       const req = { user: { role: Role.MDA_OFFICER, mdaId: 'mda-123' } };
-      expect(await controller.findAll(req, undefined, '2', '25')).toBe(result);
+      expect(await controller.findAll(req, undefined, undefined, '2', '25')).toBe(result);
       expect(mockProjectsService.findAll).toHaveBeenCalledWith({
         mdaId: 'mda-123',
+        status: undefined,
         page: 2,
         limit: 25
       });
@@ -75,9 +77,10 @@ describe('ProjectsController', () => {
       mockProjectsService.findAll.mockResolvedValue(result);
 
       const req = { user: { role: Role.WEBMASTER_ADMIN, mdaId: null } };
-      await controller.findAll(req, undefined, '1', '100000');
+      await controller.findAll(req, undefined, undefined, '1', '100000');
       expect(mockProjectsService.findAll).toHaveBeenCalledWith({
         mdaId: undefined,
+        status: undefined,
         page: 1,
         limit: 100
       });

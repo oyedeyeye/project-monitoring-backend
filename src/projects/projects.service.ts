@@ -12,13 +12,17 @@ export class ProjectsService {
         return this.prisma.project.create({ data: data as any });
     }
 
-    async findAll(params?: { mdaId?: string; page?: number; limit?: number }): Promise<{ data: Project[]; meta: { total: number; page: number; limit: number; totalPages: number } }> {
+    async findAll(params?: { mdaId?: string; status?: string; page?: number; limit?: number }): Promise<{ data: Project[]; meta: { total: number; page: number; limit: number; totalPages: number } }> {
         const page = params?.page || 1;
         const limit = params?.limit || 25;
         const skip = (page - 1) * limit;
         const mdaId = params?.mdaId;
+        const status = params?.status;
 
-        const where: Prisma.ProjectWhereInput = mdaId ? { mdaId } : {};
+        const where: Prisma.ProjectWhereInput = {
+            ...(mdaId ? { mdaId } : {}),
+            ...(status ? { status } : {}),
+        };
 
         const data = await this.prisma.project.findMany({
             where,

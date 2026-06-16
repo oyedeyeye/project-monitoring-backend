@@ -15,6 +15,7 @@ import { EmailModule } from './email/email.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -24,7 +25,7 @@ import { APP_GUARD } from '@nestjs/core';
       ttl: 60000,
       limit: 100,
     }]),
-    PrismaModule, UsersModule, AuthModule, MdasModule, ProjectsModule, ProgressUpdatesModule, IssuesModule, EmailModule, NotificationsModule
+    PrismaModule, UsersModule, AuthModule, MdasModule, ProjectsModule, ProgressUpdatesModule, IssuesModule, EmailModule, NotificationsModule, DashboardModule
   ],
   controllers: [AppController],
   providers: [

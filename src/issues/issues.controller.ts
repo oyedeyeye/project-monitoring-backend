@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards, Req } from '@nestjs/common';
 import { IssuesService } from './issues.service';
 import { Prisma, Role } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -23,8 +23,8 @@ export class IssuesController {
     @Get()
     @Roles(Role.PPIMU_ADMIN, Role.WEBMASTER_ADMIN, Role.MDA_OFFICER)
     @ApiOperation({ summary: 'Get all issues, optionally filtered by projectId' })
-    findAll(@Query('projectId') projectId?: string) {
-        return this.issuesService.findAll(projectId);
+    findAll(@Req() req: any, @Query('projectId') projectId?: string) {
+        return this.issuesService.findAll(req.user, projectId);
     }
 
     @Patch(':id')
@@ -34,8 +34,15 @@ export class IssuesController {
         return this.issuesService.update(id, updateIssueDto);
     }
 
+    @Patch(':id/resolve')
+    @Roles(Role.PPIMU_ADMIN, Role.WEBMASTER_ADMIN, Role.MDA_OFFICER)
+    @ApiOperation({ summary: 'Resolve an issue' })
+    resolve(@Param('id') id: string) {
+        return this.issuesService.update(id, { status: 'Resolved' });
+    }
+
     @Delete(':id')
-    @Roles(Role.PPIMU_ADMIN, Role.WEBMASTER_ADMIN)
+    @Roles(Role.PPIMU_ADMIN, Role.WEBMASTER_ADMIN, Role.MDA_OFFICER)
     @ApiOperation({ summary: 'Delete an issue' })
     remove(@Param('id') id: string) {
         return this.issuesService.remove(id);

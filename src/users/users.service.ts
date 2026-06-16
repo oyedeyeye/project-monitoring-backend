@@ -34,7 +34,7 @@ export class UsersService {
         });
     }
 
-    async findAll(params?: { page?: number; limit?: number; role?: Role }): Promise<{ data: User[]; meta: { total: number; page: number; limit: number; totalPages: number } }> {
+    async findAll(params?: { page?: number; limit?: number; role?: Role }) {
         const page = params?.page || 1;
         const limit = params?.limit || 25;
         const skip = (page - 1) * limit;
@@ -48,13 +48,53 @@ export class UsersService {
             where,
             skip,
             take: limit,
-            include: { profile: true },
+            include: {
+                profile: {
+                    include: {
+                        mda: true,
+                    },
+                },
+            },
         });
 
         const total = await this.prisma.user.count({ where });
 
+        // Get latest progress updates by MDA
+        const mdaUpdates = await this.prisma.progressUpdate.findMany({
+            orderBy: {
+                createdAt: 'desc',
+            },
+            include: {
+                project: {
+                    select: { mdaId: true },
+                },
+            },
+        });
+
+        const latestUpdatesByMda = new Map<string, Date>();
+        for (const update of mdaUpdates) {
+            const mdaId = update.project?.mdaId;
+            if (mdaId && !latestUpdatesByMda.has(mdaId)) {
+                latestUpdatesByMda.set(mdaId, update.createdAt);
+            }
+        }
+
+        const mappedData = data.map((user) => {
+            let lastEditDate = user.profile?.updatedAt || user.updatedAt;
+            if (user.profile?.mdaId) {
+                const mdaLastUpdate = latestUpdatesByMda.get(user.profile.mdaId);
+                if (mdaLastUpdate && mdaLastUpdate > lastEditDate) {
+                    lastEditDate = mdaLastUpdate;
+                }
+            }
+            return {
+                ...user,
+                lastEditActivityDate: lastEditDate,
+            };
+        });
+
         return {
-            data,
+            data: mappedData,
             meta: {
                 total,
                 page,

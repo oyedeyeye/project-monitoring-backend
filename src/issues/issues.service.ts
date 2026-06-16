@@ -1,19 +1,30 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { Prisma, Issue } from '@prisma/client';
+import { Prisma, Issue, Role } from '@prisma/client';
 
 @Injectable()
 export class IssuesService {
     constructor(private prisma: PrismaService) {}
 
-    async findAll(projectId?: string): Promise<Issue[]> {
+    async findAll(user: { role: Role; mdaId?: string }, projectId?: string): Promise<Issue[]> {
         const where: Prisma.IssueWhereInput = {};
         if (projectId) {
             where.projectId = projectId;
         }
 
+        if (user.role === Role.MDA_OFFICER && user.mdaId) {
+            where.project = { mdaId: user.mdaId };
+        }
+
         return this.prisma.issue.findMany({
             where,
+            include: {
+                project: {
+                    include: {
+                        mda: true,
+                    },
+                },
+            },
             orderBy: { createdAt: 'desc' },
         });
     }

@@ -30,6 +30,7 @@ export class ProjectsController {
     @Get()
     @ApiOperation({ summary: 'Retrieve projects' })
     @ApiQuery({ name: 'mdaId', required: false, description: 'Filter by MDA ID (Admin only)' })
+    @ApiQuery({ name: 'status', required: false, description: 'Filter by project status' })
     @ApiQuery({ name: 'page', required: false, description: 'Page number (default: 1)' })
     @ApiQuery({ name: 'limit', required: false, description: 'Items per page (default: 25)' })
     @ApiResponse({ status: 200, description: 'List of projects based on user role' })
@@ -37,6 +38,7 @@ export class ProjectsController {
     findAll(
         @Req() req: any,
         @Query('mdaId') mdaId?: string,
+        @Query('status') status?: string,
         @Query('page') pageStr?: string,
         @Query('limit') limitStr?: string,
     ) {
@@ -52,6 +54,7 @@ export class ProjectsController {
 
         return this.projectsService.findAll({
             mdaId: targetMdaId,
+            status,
             page,
             limit,
         });

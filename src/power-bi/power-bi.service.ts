@@ -143,4 +143,62 @@ export class PowerBiService {
 
         return csvRows.join('\n');
     }
+    /**
+     * Get paginated data from a whitelisted table for Power BI ingestion
+     */
+    async getTableData(tableName: string, page: number = 1, limit: number = 1000) {
+        const model = this.getValidatedModel(tableName);
+        const dbTableName = model.dbName || model.name;
+
+        const allowedFields = model.fields
+            .filter(field => field.kind === 'scalar' && !this.isSensitiveField(field.name));
+
+        if (allowedFields.length === 0) {
+            return { data: [], meta: { total: 0, page, limit, totalPages: 0 } };
+        }
+
+        const selectClause = allowedFields.map(field => {
+            const dbColumn = field.dbName || field.name;
+            return `\`${dbColumn}\` AS \`${field.name}\``;
+        }).join(', ');
+        
+        const offset = (page - 1) * limit;
+
+        const countQuery = `SELECT COUNT(*) as total FROM \`${dbTableName}\``;
+        const countResult: any[] = await this.prisma.$queryRawUnsafe(countQuery);
+        const total = Number(countResult[0].total || 0);
+
+        const dataQuery = `SELECT ${selectClause} FROM \`${dbTableName}\` LIMIT ${limit} OFFSET ${offset}`;
+        const rawResults: any[] = await this.prisma.$queryRawUnsafe(dataQuery);
+
+        const data = rawResults.map(row => {
+            const serializedRow: Record<string, any> = {};
+            for (const field of allowedFields) {
+                const col = field.name;
+                const val = row[col];
+                if (val !== undefined) {
+                    if (val instanceof Prisma.Decimal) {
+                        serializedRow[col] = Number(val);
+                    } else if (typeof val === 'bigint') {
+                        serializedRow[col] = val.toString();
+                    } else {
+                        serializedRow[col] = val;
+                    }
+                } else {
+                    serializedRow[col] = null;
+                }
+            }
+            return serializedRow;
+        });
+
+        return {
+            data,
+            meta: {
+                total,
+                page,
+                limit,
+                totalPages: Math.ceil(total / limit),
+            }
+        };
+    }
 }

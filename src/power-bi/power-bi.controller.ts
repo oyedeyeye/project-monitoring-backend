@@ -1,7 +1,8 @@
-import { Controller, Get, Param, Res } from '@nestjs/common';
+import { Controller, Get, Param, Res, Query, UseGuards } from '@nestjs/common';
 import * as express from 'express';
 import { PowerBiService } from './power-bi.service';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
+import { PowerBiApiKeyGuard } from '../auth/guards/powerbi-api-key.guard';
 
 @ApiTags('power-bi')
 @Controller('power-bi')
@@ -39,5 +40,23 @@ export class PowerBiController {
             `attachment; filename="${tableName.toLowerCase()}-sample.csv"`,
         );
         res.status(200).send(csvContent);
+    }
+
+    @UseGuards(PowerBiApiKeyGuard)
+    @Get('tables/:tableName/data')
+    @ApiOperation({ summary: 'Paginated data ingestion endpoint for Power BI' })
+    @ApiParam({ name: 'tableName', description: 'The model or database table name' })
+    @ApiQuery({ name: 'page', required: false, description: 'Page number (default: 1)' })
+    @ApiQuery({ name: 'limit', required: false, description: 'Items per page (default: 1000)' })
+    @ApiResponse({ status: 200, description: 'Paginated JSON data for ingestion' })
+    @ApiResponse({ status: 401, description: 'Missing or Invalid API Key' })
+    getTableData(
+        @Param('tableName') tableName: string,
+        @Query('page') pageStr?: string,
+        @Query('limit') limitStr?: string,
+    ) {
+        const page = pageStr ? parseInt(pageStr, 10) : 1;
+        const limit = limitStr ? parseInt(limitStr, 10) : 1000;
+        return this.powerBiService.getTableData(tableName, page, limit);
     }
 }

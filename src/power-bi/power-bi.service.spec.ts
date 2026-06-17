@@ -99,4 +99,41 @@ describe('PowerBiService', () => {
             expect(csv).toBe('id,name,code,createdAt,updatedAt');
         });
     });
+
+    describe('getTableData', () => {
+        it('should return paginated data and metadata', async () => {
+            // Mock COUNT query
+            mockPrismaService.$queryRawUnsafe.mockResolvedValueOnce([{ total: 100n }]);
+            // Mock SELECT query
+            mockPrismaService.$queryRawUnsafe.mockResolvedValueOnce([
+                { id: '1', name: 'Test MDA', code: 'T1' },
+                { id: '2', name: 'Second MDA', code: null }
+            ]);
+
+            const result = await service.getTableData('MDA', 2, 10);
+            
+            expect(result.data).toHaveLength(2);
+            expect(result.data[0].id).toBe('1');
+            expect(result.data[1].code).toBeNull(); // explicitly tests null passing
+
+            expect(result.meta).toEqual({
+                total: 100,
+                page: 2,
+                limit: 10,
+                totalPages: 10
+            });
+
+            // Count query
+            expect(mockPrismaService.$queryRawUnsafe).toHaveBeenNthCalledWith(1, 'SELECT COUNT(*) as total FROM `MDA`');
+            // Select query with LIMIT and OFFSET ((page 2 - 1) * 10 = 10)
+            expect(mockPrismaService.$queryRawUnsafe).toHaveBeenNthCalledWith(
+                2, 
+                expect.stringContaining('SELECT `id` AS `id`, `name` AS `name`, `code` AS `code`, `createdAt` AS `createdAt`, `updatedAt` AS `updatedAt` FROM `MDA` LIMIT 10 OFFSET 10')
+            );
+        });
+
+        it('should return empty data if table has no allowed columns', async () => {
+            await expect(service.getTableData('User', 1, 10)).rejects.toThrow(NotFoundException);
+        });
+    });
 });

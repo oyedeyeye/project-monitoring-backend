@@ -10,6 +10,7 @@ describe('PowerBiController', () => {
     const mockPowerBiService = {
         getTablesStructure: jest.fn(),
         getTableSample: jest.fn(),
+        getTableData: jest.fn(),
         generateCsv: jest.fn(),
     };
 
@@ -68,6 +69,26 @@ describe('PowerBiController', () => {
             );
             expect(mockRes.status).toHaveBeenCalledWith(200);
             expect(mockRes.send).toHaveBeenCalledWith('id,name\n1,Test');
+        });
+    });
+
+    describe('getTableData', () => {
+        it('should call getTableData with default pagination parameters', async () => {
+            mockPowerBiService.getTableData.mockResolvedValue({ data: [], meta: { page: 1, limit: 1000 } });
+            
+            const res = await controller.getTableData('MDA');
+            
+            expect(res).toEqual({ data: [], meta: { page: 1, limit: 1000 } });
+            expect(service.getTableData).toHaveBeenCalledWith('MDA', 1, 1000);
+        });
+
+        it('should parse page and limit strings and call getTableData', async () => {
+            mockPowerBiService.getTableData.mockResolvedValue({ data: [], meta: { page: 3, limit: 50 } });
+            
+            const res = await controller.getTableData('Project', '3', '50');
+            
+            expect(res).toEqual({ data: [], meta: { page: 3, limit: 50 } });
+            expect(service.getTableData).toHaveBeenCalledWith('Project', 3, 50);
         });
     });
 });

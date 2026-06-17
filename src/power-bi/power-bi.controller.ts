@@ -1,14 +1,21 @@
 import { Controller, Get, Param, Res, Query, UseGuards } from '@nestjs/common';
 import * as express from 'express';
 import { PowerBiService } from './power-bi.service';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 import { PowerBiApiKeyGuard } from '../auth/guards/powerbi-api-key.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { Role } from '@prisma/client';
 
 @ApiTags('power-bi')
 @Controller('power-bi')
 export class PowerBiController {
     constructor(private readonly powerBiService: PowerBiService) {}
 
+    @ApiBearerAuth()
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(Role.WEBMASTER_ADMIN)
     @Get('tables')
     @ApiOperation({ summary: 'Get list of available tables and their schemas' })
     @ApiResponse({ status: 200, description: 'Table structures' })
@@ -16,6 +23,9 @@ export class PowerBiController {
         return this.powerBiService.getTablesStructure();
     }
 
+    @ApiBearerAuth()
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(Role.WEBMASTER_ADMIN)
     @Get('tables/:tableName/sample')
     @ApiOperation({ summary: 'Get up to 10 random sample records for a table' })
     @ApiParam({ name: 'tableName', description: 'The model or database table name' })
@@ -24,6 +34,9 @@ export class PowerBiController {
         return this.powerBiService.getTableSample(tableName);
     }
 
+    @ApiBearerAuth()
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(Role.WEBMASTER_ADMIN)
     @Get('tables/:tableName/export')
     @ApiOperation({ summary: 'Download 10 random sample records for a table as a CSV file' })
     @ApiParam({ name: 'tableName', description: 'The model or database table name' })

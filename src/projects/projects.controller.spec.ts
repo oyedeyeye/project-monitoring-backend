@@ -85,6 +85,24 @@ describe('ProjectsController', () => {
         limit: 100
       });
     });
+
+    it('should forward lga filter to service if provided', async () => {
+      const result = {
+        data: [{ projectId: '1', title: 'LGA Project', lga: 'Ondo East' }],
+        meta: { total: 1, page: 1, limit: 25, totalPages: 1 }
+      };
+      mockProjectsService.findAll.mockResolvedValue(result);
+
+      const req = { user: { role: Role.WEBMASTER_ADMIN, mdaId: null } };
+      expect(await controller.findAll(req, undefined, undefined, '1', '25', 'Ondo East')).toBe(result);
+      expect(mockProjectsService.findAll).toHaveBeenCalledWith({
+        mdaId: undefined,
+        status: undefined,
+        lga: 'Ondo East',
+        page: 1,
+        limit: 25
+      });
+    });
   });
 
   describe('findOne', () => {

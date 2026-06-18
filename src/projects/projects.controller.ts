@@ -31,6 +31,7 @@ export class ProjectsController {
     @ApiOperation({ summary: 'Retrieve projects' })
     @ApiQuery({ name: 'mdaId', required: false, description: 'Filter by MDA ID (Admin only)' })
     @ApiQuery({ name: 'status', required: false, description: 'Filter by project status' })
+    @ApiQuery({ name: 'lga', required: false, description: 'Filter by local government area (LGA)' })
     @ApiQuery({ name: 'page', required: false, description: 'Page number (default: 1)' })
     @ApiQuery({ name: 'limit', required: false, description: 'Items per page (default: 25)' })
     @ApiResponse({ status: 200, description: 'List of projects based on user role' })
@@ -41,6 +42,7 @@ export class ProjectsController {
         @Query('status') status?: string,
         @Query('page') pageStr?: string,
         @Query('limit') limitStr?: string,
+        @Query('lga') lga?: string,
     ) {
         let page = pageStr ? parseInt(pageStr, 10) : 1;
         let limit = limitStr ? parseInt(limitStr, 10) : 25;
@@ -55,6 +57,7 @@ export class ProjectsController {
         return this.projectsService.findAll({
             mdaId: targetMdaId,
             status,
+            lga,
             page,
             limit,
         });

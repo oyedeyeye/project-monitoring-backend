@@ -11,6 +11,16 @@ async function bootstrap() {
   // Hardening: Enable Helmet for secure HTTP headers
   app.use(helmet());
 
+  // Middleware to normalize URL paths by collapsing multiple slashes (e.g. //power-bi -> /power-bi)
+  app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
+    if (req.url) {
+      const [path, query] = req.url.split('?');
+      const normalizedPath = path.replace(/\/{2,}/g, '/');
+      req.url = query !== undefined ? `${normalizedPath}?${query}` : normalizedPath;
+    }
+    next();
+  });
+
   app.enableCors({
     origin: [
       '*',
@@ -18,11 +28,9 @@ async function bootstrap() {
       'http://localhost:5173', // Keep local dev access if needed
       'http://localhost:3000'
     ],
-    credentials: false, //true,
+    credentials: false,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-    allowedHeaders: 'Content-Type,Accept,Authorization,X-Requested-With',
-    // preflightContinue: false,
-    // optionsSuccessStatus: 204,
+    allowedHeaders: 'Content-Type,Accept,Authorization,X-Requested-With,x-api-key',
   });
 
   // Critical: Global Validation Pipe to prevent Mass Assignment

@@ -3,6 +3,9 @@ import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
+import { JwtAuthGuard } from '../src/auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../src/auth/guards/roles.guard';
+import { PowerBiApiKeyGuard } from '../src/auth/guards/powerbi-api-key.guard';
 
 describe('PowerBi (e2e)', () => {
     let app: INestApplication<App>;
@@ -10,9 +13,24 @@ describe('PowerBi (e2e)', () => {
     beforeAll(async () => {
         const moduleFixture: TestingModule = await Test.createTestingModule({
             imports: [AppModule],
-        }).compile();
+        })
+        .overrideGuard(JwtAuthGuard)
+        .useValue({ canActivate: () => true })
+        .overrideGuard(RolesGuard)
+        .useValue({ canActivate: () => true })
+        .overrideGuard(PowerBiApiKeyGuard)
+        .useValue({ canActivate: () => true })
+        .compile();
 
         app = moduleFixture.createNestApplication();
+        app.use((req: any, res: any, next: any) => {
+            if (req.url) {
+                const [path, query] = req.url.split('?');
+                const normalizedPath = path.replace(/\/{2,}/g, '/');
+                req.url = query !== undefined ? `${normalizedPath}?${query}` : normalizedPath;
+            }
+            next();
+        });
         await app.init();
     });
 
@@ -30,6 +48,15 @@ describe('PowerBi (e2e)', () => {
                 expect(tableNames).toContain('MDA');
                 expect(tableNames).toContain('Project');
                 expect(tableNames).not.toContain('User');
+            });
+    });
+
+    it('GET //power-bi/tables (200 OK after path normalization)', () => {
+        return request(app.getHttpServer())
+            .get('//power-bi/tables')
+            .expect(200)
+            .expect((res) => {
+                expect(Array.isArray(res.body)).toBe(true);
             });
     });
 

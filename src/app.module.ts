@@ -17,6 +17,7 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { PowerBiModule } from './power-bi/power-bi.module';
+import { ReportsModule } from './reports/reports.module';
 
 @Module({
   imports: [
@@ -26,7 +27,7 @@ import { PowerBiModule } from './power-bi/power-bi.module';
       ttl: 60000,
       limit: 100,
     }]),
-    PrismaModule, UsersModule, AuthModule, MdasModule, ProjectsModule, ProgressUpdatesModule, IssuesModule, EmailModule, NotificationsModule, DashboardModule, PowerBiModule
+    PrismaModule, UsersModule, AuthModule, MdasModule, ProjectsModule, ProgressUpdatesModule, IssuesModule, EmailModule, NotificationsModule, DashboardModule, PowerBiModule, ReportsModule
   ],
   controllers: [AppController],
   providers: [

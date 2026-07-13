@@ -23,7 +23,8 @@ async function bootstrap() {
 
   app.enableCors({
     origin: [
-      '*',
+      'https://ppimu.ondostate.gov.ng',
+      'http://ppimu.ondostate.gov.ng',
       'https://project-monitoring-dashboard-hazel.vercel.app',
       'http://localhost:5173', // Keep local dev access if needed
       'http://localhost:3000'

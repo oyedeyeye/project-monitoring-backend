@@ -84,6 +84,14 @@ describe('ReportsService', () => {
     it('should aggregate data correctly for a monthly report', async () => {
       const result = await service.getReportAnalytics(2026, 'monthly', 6);
 
+      expect(mockPrismaService.project.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            isArchived: false
+          })
+        })
+      );
+
       // Executive overview assertions
       expect(result.executiveOverview.totalProjects).toBe(1);
       expect(result.executiveOverview.statusDistribution.Ongoing).toBe(1);

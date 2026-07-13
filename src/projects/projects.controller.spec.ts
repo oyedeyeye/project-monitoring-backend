@@ -3,7 +3,7 @@ import { ProjectsController } from './projects.controller';
 import { ProjectsService } from './projects.service';
 import { Role } from '@prisma/client';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { NotFoundException } from '@nestjs/common';
+import { NotFoundException, BadRequestException } from '@nestjs/common';
 
 describe('ProjectsController', () => {
   let controller: ProjectsController;
@@ -113,6 +113,21 @@ describe('ProjectsController', () => {
 
       expect(await controller.findOne('proj-1', req)).toBe(project);
       expect(mockProjectsService.findOne).toHaveBeenCalledWith('proj-1', req.user);
+    });
+  });
+
+  describe('getArchivedByYear', () => {
+    it('should return archived projects for a given year', async () => {
+      const mockResult = [{ projectId: '1' }];
+      (mockProjectsService as any).getArchivedByYear = jest.fn().mockResolvedValue(mockResult);
+
+      const result = await controller.getArchivedByYear('2025');
+      expect(result).toBe(mockResult);
+      expect((mockProjectsService as any).getArchivedByYear).toHaveBeenCalledWith(2025);
+    });
+
+    it('should throw BadRequestException if year is invalid', async () => {
+      await expect(controller.getArchivedByYear('invalid')).rejects.toThrow(BadRequestException);
     });
   });
 });

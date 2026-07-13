@@ -51,7 +51,7 @@ export class ProgressUpdatesService {
         const skip = (page - 1) * limit;
 
         const where: Prisma.ProgressUpdateWhereInput = {
-            project: { mdaId }
+            project: { mdaId, isArchived: false }
         };
         if (options?.projectId) {
             where.projectId = options.projectId;
@@ -84,7 +84,8 @@ export class ProgressUpdatesService {
         const skip = (page - 1) * limit;
 
         const where: Prisma.ProgressUpdateWhereInput = {
-            status: ReportStatus.SUBMITTED
+            status: ReportStatus.SUBMITTED,
+            project: { isArchived: false }
         };
         if (options?.projectId) {
             where.projectId = options.projectId;
@@ -116,7 +117,9 @@ export class ProgressUpdatesService {
         const limit = options?.limit || 25;
         const skip = (page - 1) * limit;
 
-        const where: Prisma.ProgressUpdateWhereInput = {};
+        const where: Prisma.ProgressUpdateWhereInput = {
+            project: { isArchived: false }
+        };
         if (options?.projectId) {
             where.projectId = options.projectId;
         }

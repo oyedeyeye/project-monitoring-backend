@@ -52,14 +52,14 @@ describe('ProgressUpdatesService', () => {
       const result = await service.findAll({ page: 2, limit: 10, projectId: 'proj-1' });
 
       expect(mockProgressUpdate.findMany).toHaveBeenCalledWith({
-        where: { projectId: 'proj-1' },
+        where: { projectId: 'proj-1', project: { isArchived: false } },
         include: { project: true, issues: true },
         orderBy: { createdAt: 'desc' },
         skip: 10,
         take: 10,
       });
       expect(mockProgressUpdate.count).toHaveBeenCalledWith({
-        where: { projectId: 'proj-1' },
+        where: { projectId: 'proj-1', project: { isArchived: false } },
       });
       expect(result).toEqual({
         data: mockData,
@@ -82,14 +82,14 @@ describe('ProgressUpdatesService', () => {
       const result = await service.findAllSubmitted({ page: 1, limit: 5 });
 
       expect(mockProgressUpdate.findMany).toHaveBeenCalledWith({
-        where: { status: ReportStatus.SUBMITTED },
+        where: { status: ReportStatus.SUBMITTED, project: { isArchived: false } },
         include: { project: true, issues: true },
         orderBy: { createdAt: 'desc' },
         skip: 0,
         take: 5,
       });
       expect(mockProgressUpdate.count).toHaveBeenCalledWith({
-        where: { status: ReportStatus.SUBMITTED },
+        where: { status: ReportStatus.SUBMITTED, project: { isArchived: false } },
       });
       expect(result).toEqual({
         data: mockData,
@@ -114,7 +114,7 @@ describe('ProgressUpdatesService', () => {
       expect(mockProgressUpdate.findMany).toHaveBeenCalledWith({
         where: {
           projectId: 'proj-3',
-          project: { mdaId: 'mda-123' },
+          project: { mdaId: 'mda-123', isArchived: false },
         },
         include: { project: true, issues: true },
         orderBy: { createdAt: 'desc' },
@@ -124,7 +124,7 @@ describe('ProgressUpdatesService', () => {
       expect(mockProgressUpdate.count).toHaveBeenCalledWith({
         where: {
           projectId: 'proj-3',
-          project: { mdaId: 'mda-123' },
+          project: { mdaId: 'mda-123', isArchived: false },
         },
       });
       expect(result).toEqual({

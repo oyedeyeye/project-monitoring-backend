@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query, Req, UseInterceptors } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query, Req, UseInterceptors, UploadedFile, BadRequestException, Header } from '@nestjs/common';
 import { ProjectsService } from './projects.service';
 import { Role } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -8,6 +8,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse, ApiBody, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { CacheInterceptor } from '@nestjs/cache-manager';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @ApiTags('projects')
 @ApiBearerAuth()
@@ -25,6 +26,44 @@ export class ProjectsController {
     @ApiResponse({ status: 403, description: 'Forbidden / Invalid Role' })
     create(@Body() createProjectDto: CreateProjectDto) {
         return this.projectsService.create(createProjectDto);
+    }
+
+    @Roles(Role.WEBMASTER_ADMIN)
+    @Get('import/template')
+    @Header('Content-Type', 'text/csv')
+    @Header('Content-Disposition', 'attachment; filename="projects_import_template.csv"')
+    @ApiOperation({ summary: 'Download CSV template for project import' })
+    @ApiResponse({ status: 200, description: 'CSV template content' })
+    async getImportTemplate() {
+        const headers = 'mda,project,budget';
+        const sampleRow1 = '"TEACHING SERVICE COMMISSION",,';
+        const sampleRow2 = '"TEACHING SERVICE COMMISSION","Purchase of Laptops",5000000';
+        
+        return `${headers}\n${sampleRow1}\n${sampleRow2}`;
+    }
+
+    @Roles(Role.WEBMASTER_ADMIN)
+    @Post('import/csv')
+    @UseInterceptors(FileInterceptor('file'))
+    @ApiOperation({ summary: 'Import projects from CSV' })
+    @ApiBody({
+        schema: {
+            type: 'object',
+            properties: {
+                file: {
+                    type: 'string',
+                    format: 'binary',
+                },
+            },
+        },
+    })
+    @ApiResponse({ status: 201, description: 'Projects successfully imported' })
+    @ApiResponse({ status: 400, description: 'Invalid CSV format or missing fields' })
+    async importCsv(@UploadedFile() file: any) {
+        if (!file) {
+            throw new BadRequestException('CSV file is required');
+        }
+        return this.projectsService.importCsv(file.buffer);
     }
 
     @Get()
@@ -61,6 +100,18 @@ export class ProjectsController {
             page,
             limit,
         });
+    }
+
+    @Get('archive/:year')
+    @ApiOperation({ summary: 'Get archived projects by budget year' })
+    @ApiParam({ name: 'year', description: 'Budget Year (e.g. 2025)' })
+    @ApiResponse({ status: 200, description: 'Archived projects returned' })
+    async getArchivedByYear(@Param('year') year: string) {
+        const yearNum = parseInt(year, 10);
+        if (isNaN(yearNum)) {
+            throw new BadRequestException('Invalid year format');
+        }
+        return this.projectsService.getArchivedByYear(yearNum);
     }
 
     @Get(':projectId')

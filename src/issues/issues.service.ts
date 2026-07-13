@@ -13,7 +13,9 @@ export class IssuesService {
         }
 
         if (user.role === Role.MDA_OFFICER && user.mdaId) {
-            where.project = { mdaId: user.mdaId };
+            where.project = { ...((where.project as any) || {}), mdaId: user.mdaId, isArchived: false };
+        } else {
+            where.project = { ...((where.project as any) || {}), isArchived: false };
         }
 
         return this.prisma.issue.findMany({

@@ -44,7 +44,7 @@ describe('IssuesService', () => {
       const result = await service.findAll(user as any, 'proj1');
       expect(result).toEqual(mockIssues);
       expect(prismaService.issue.findMany).toHaveBeenCalledWith({
-        where: { projectId: 'proj1' },
+        where: { projectId: 'proj1', project: expect.objectContaining({ isArchived: false }) },
         include: {
           project: {
             include: {
@@ -54,6 +54,20 @@ describe('IssuesService', () => {
         },
         orderBy: { createdAt: 'desc' },
       });
+    });
+
+    it('should return issues scoped to MDA and exclude archived for MDA_OFFICER', async () => {
+      const mockIssues = [];
+      (prismaService.issue.findMany as jest.Mock).mockResolvedValue(mockIssues);
+
+      const user = { role: Role.MDA_OFFICER, mdaId: 'mda1' };
+      const result = await service.findAll(user as any, undefined);
+      expect(result).toEqual(mockIssues);
+      expect(prismaService.issue.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { project: { mdaId: 'mda1', isArchived: false } }
+        })
+      );
     });
   });
 

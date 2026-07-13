@@ -54,6 +54,7 @@ model Project {
   fundingSource      String           @map("funding_source")
   contractor         String?
   status             String
+  isArchived         Boolean          @default(false) @map("is_archived")
   createdAt          DateTime         @default(now()) @map("created_at")
   updatedAt          DateTime         @updatedAt
   

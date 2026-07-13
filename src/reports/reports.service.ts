@@ -15,6 +15,7 @@ export class ReportsService {
     // Fetch projects started on or before periodEndDate
     const projects = await this.prisma.project.findMany({
       where: {
+        isArchived: false,
         startDate: {
           lte: endDate,
         },

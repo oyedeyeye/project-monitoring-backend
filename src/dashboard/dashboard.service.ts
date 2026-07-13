@@ -17,7 +17,7 @@ export class DashboardService {
 
         // 2. Fetch all projects with their latest progress update
         const projects = await this.prisma.project.findMany({
-            where: mdaId ? { mdaId } : {},
+            where: { ...(mdaId ? { mdaId } : {}), isArchived: false },
             include: {
                 progressUpdates: {
                     orderBy: [
@@ -48,7 +48,7 @@ export class DashboardService {
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
         const pastProjects = await this.prisma.project.findMany({
-            where: mdaId ? { mdaId } : {},
+            where: { ...(mdaId ? { mdaId } : {}), isArchived: false },
             include: {
                 progressUpdates: {
                     where: {
@@ -89,7 +89,7 @@ export class DashboardService {
 
         // 4. Recent projects (by latest progress update's reportDate)
         const recentUpdates = await this.prisma.progressUpdate.findMany({
-            where: mdaId ? { project: { mdaId } } : {},
+            where: { project: { isArchived: false, ...(mdaId ? { mdaId } : {}) } },
             orderBy: [
                 { reportDate: 'desc' },
                 { createdAt: 'desc' },
@@ -112,7 +112,7 @@ export class DashboardService {
         const openCount = await this.prisma.issue.count({
             where: {
                 status: 'Open',
-                ...(mdaId ? { project: { mdaId } } : {}),
+                project: { isArchived: false, ...(mdaId ? { mdaId } : {}) },
             },
         });
 
@@ -134,7 +134,7 @@ export class DashboardService {
                         gte: startOfDay,
                         lte: endOfDay,
                     },
-                    ...(mdaId ? { project: { mdaId } } : {}),
+                    project: { isArchived: false, ...(mdaId ? { mdaId } : {}) },
                 },
             });
             trend.push({ label, value: count });
@@ -146,7 +146,7 @@ export class DashboardService {
             _count: {
                 projectId: true,
             },
-            where: mdaId ? { mdaId } : {},
+            where: { ...(mdaId ? { mdaId } : {}), isArchived: false },
         });
 
         const mdaIds = mdaProjectsCount.map((g) => g.mdaId);
@@ -168,7 +168,7 @@ export class DashboardService {
             where: {
                 status: 'SUBMITTED',
                 milestoneStatus: { not: 'Approved' },
-                ...(mdaId ? { project: { mdaId } } : {}),
+                project: { isArchived: false, ...(mdaId ? { mdaId } : {}) },
             },
         });
 

@@ -16,8 +16,8 @@ export class IssuesController {
     @Post()
     @Roles(Role.PPIMU_ADMIN, Role.WEBMASTER_ADMIN, Role.MDA_OFFICER)
     @ApiOperation({ summary: 'Create a new issue' })
-    create(@Body() createIssueDto: Prisma.IssueUncheckedCreateInput) {
-        return this.issuesService.create(createIssueDto);
+    create(@Req() req: any, @Body() createIssueDto: Prisma.IssueUncheckedCreateInput) {
+        return this.issuesService.create(createIssueDto, req.user);
     }
 
     @Get()
@@ -30,21 +30,21 @@ export class IssuesController {
     @Patch(':id')
     @Roles(Role.PPIMU_ADMIN, Role.WEBMASTER_ADMIN, Role.MDA_OFFICER)
     @ApiOperation({ summary: 'Update an issue' })
-    update(@Param('id') id: string, @Body() updateIssueDto: Prisma.IssueUncheckedUpdateInput) {
-        return this.issuesService.update(id, updateIssueDto);
+    update(@Req() req: any, @Param('id') id: string, @Body() updateIssueDto: Prisma.IssueUncheckedUpdateInput) {
+        return this.issuesService.update(id, updateIssueDto, req.user);
     }
 
     @Patch(':id/resolve')
     @Roles(Role.PPIMU_ADMIN, Role.WEBMASTER_ADMIN, Role.MDA_OFFICER)
     @ApiOperation({ summary: 'Resolve an issue' })
-    resolve(@Param('id') id: string) {
-        return this.issuesService.update(id, { status: 'Resolved' });
+    resolve(@Req() req: any, @Param('id') id: string) {
+        return this.issuesService.update(id, { status: 'Resolved' }, req.user);
     }
 
     @Delete(':id')
     @Roles(Role.PPIMU_ADMIN, Role.WEBMASTER_ADMIN, Role.MDA_OFFICER)
     @ApiOperation({ summary: 'Delete an issue' })
-    remove(@Param('id') id: string) {
-        return this.issuesService.remove(id);
+    remove(@Req() req: any, @Param('id') id: string) {
+        return this.issuesService.remove(id, req.user);
     }
 }

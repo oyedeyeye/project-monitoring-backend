@@ -1,10 +1,34 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma, Issue, Role } from '@prisma/client';
+
+type ActingUser = { role: Role; mdaId?: string };
 
 @Injectable()
 export class IssuesService {
     constructor(private prisma: PrismaService) {}
+
+    /**
+     * Assert the caller may act on this issue, following the idiom in
+     * ProjectsService.findOne: the ownership predicate is part of the query and
+     * a miss raises 404 rather than 403, so issue ids are not enumerable.
+     *
+     * Scoping matches findAll above (MDA_OFFICER only) so that PPIMU_ADMIN
+     * behaviour is unchanged by this fix.
+     */
+    private async assertCanAccess(id: string, user: ActingUser): Promise<void> {
+        const where: Prisma.IssueWhereInput = { id };
+
+        if (user.role === Role.MDA_OFFICER && user.mdaId) {
+            where.project = { mdaId: user.mdaId };
+        }
+
+        const issue = await this.prisma.issue.findFirst({ where });
+
+        if (!issue) {
+            throw new NotFoundException('Issue not found or access denied');
+        }
+    }
 
     async findAll(user: { role: Role; mdaId?: string }, projectId?: string): Promise<Issue[]> {
         const where: Prisma.IssueWhereInput = {};
@@ -31,7 +55,18 @@ export class IssuesService {
         });
     }
 
-    async create(data: Prisma.IssueUncheckedCreateInput): Promise<Issue> {
+    async create(data: Prisma.IssueUncheckedCreateInput, user: ActingUser): Promise<Issue> {
+        // An officer may only log issues against projects in their own MDA.
+        if (user.role === Role.MDA_OFFICER && user.mdaId) {
+            const project = await this.prisma.project.findFirst({
+                where: { projectId: data.projectId, mdaId: user.mdaId },
+            });
+
+            if (!project) {
+                throw new NotFoundException('Project not found or access denied');
+            }
+        }
+
         // Ensure logDate and dueDate are handled properly
         if (data.logDate && typeof data.logDate === 'string') {
             data.logDate = new Date(data.logDate);
@@ -50,14 +85,22 @@ export class IssuesService {
         });
     }
 
-    async update(id: string, data: Prisma.IssueUncheckedUpdateInput): Promise<Issue> {
+    async update(id: string, data: Prisma.IssueUncheckedUpdateInput, user: ActingUser): Promise<Issue> {
+        await this.assertCanAccess(id, user);
+
+        // Reassigning projectId would move the issue into another MDA's project,
+        // sidestepping the check above.
+        const { projectId: _projectId, ...safeData } = data;
+
         return this.prisma.issue.update({
             where: { id },
-            data,
+            data: safeData,
         });
     }
 
-    async remove(id: string): Promise<Issue> {
+    async remove(id: string, user: ActingUser): Promise<Issue> {
+        await this.assertCanAccess(id, user);
+
         return this.prisma.issue.delete({
             where: { id },
         });

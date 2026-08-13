@@ -65,9 +65,10 @@ describe('IssuesController', () => {
       const mockCreatedIssue = { id: '1', ...mockDto };
       (service.create as jest.Mock).mockResolvedValue(mockCreatedIssue);
 
-      const result = await controller.create(mockDto);
+      const req = { user: { role: Role.WEBMASTER_ADMIN } };
+      const result = await controller.create(req, mockDto);
       expect(result).toEqual(mockCreatedIssue);
-      expect(service.create).toHaveBeenCalledWith(mockDto);
+      expect(service.create).toHaveBeenCalledWith(mockDto, req.user);
     });
   });
 });

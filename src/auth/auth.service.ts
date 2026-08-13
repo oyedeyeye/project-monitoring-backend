@@ -85,27 +85,30 @@ export class AuthService {
         const user = await this.usersService.create(userCreateInput);
 
         // Send the appropriate onboarding email
+        // Credentials and setup tokens are deliberately NOT logged on failure —
+        // server logs are retained and broadly readable, so writing them there
+        // is equivalent to storing passwords in plaintext.
         if (hasPassword) {
             try {
                 await this.emailService.sendAccountCreatedEmail(user.email, data.password);
             } catch (error) {
-                console.error(`[AuthService] WARNING: Failed to send account details email to ${user.email} (SMTP connection/firewall issue).`);
-                const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-                console.log(`\n👉 [DEVELOPMENT BACKUP CREDENTIALS] Email: ${user.email} | Password: ${data.password}\nLogin Link: ${frontendUrl}\n`);
+                console.error(`[AuthService] WARNING: Failed to send account details email to ${user.email} (SMTP connection/firewall issue). The account was created; ask the user to use "Forgot password" to set their password.`);
             }
         } else if (rawSetupToken) {
             // Setup token flow
             try {
                 await this.emailService.sendPasswordSetupEmail(user.email, rawSetupToken);
             } catch (error) {
-                console.error(`[AuthService] WARNING: Failed to send password setup email to ${user.email} (SMTP connection/firewall issue).`);
-                const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-                console.log(`\n👉 [DEVELOPMENT BACKUP LINK] Click here to setup password for ${user.email}:\n${frontendUrl}/setup-password?token=${rawSetupToken}\n`);
+                console.error(`[AuthService] WARNING: Failed to send password setup email to ${user.email} (SMTP connection/firewall issue). The account was created; ask the user to use "Forgot password" to set their password.`);
             }
         }
 
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { passwordHash: _, ...result } = user;
+        const {
+            passwordHash: _passwordHash,
+            resetPasswordToken: _resetPasswordToken,
+            resetPasswordExpires: _resetPasswordExpires,
+            ...result
+        } = user;
         return result;
     }
 
@@ -127,9 +130,8 @@ export class AuthService {
         });
 
         this.emailService.sendPasswordResetEmail(user.email, resetToken).catch(error => {
+            // The raw reset token is a bearer credential — never write it to logs.
             console.error(`[AuthService] WARNING: Failed to send password reset email to ${user.email} (SMTP connection/firewall issue).`);
-            const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-            console.log(`\n👉 [DEVELOPMENT BACKUP LINK] Click here to reset password for ${user.email}:\n${frontendUrl}/reset-password?token=${resetToken}\n`);
         });
 
         return genericMessage;

@@ -22,11 +22,6 @@ jobs:
           node-version: 22
 
       - name: Install dependencies
-        env:
-          # prisma.config.ts resolves DATABASE_URL eagerly, and `prisma generate`
-          # (run via postinstall) loads that config even though it never
-          # connects to a database. A placeholder satisfies the check.
-          DATABASE_URL: 'mysql://user:password@localhost:3306/placeholder'
         run: npm ci
 
       - name: Build
@@ -43,11 +38,11 @@ jobs:
           git checkout --orphan deploy-tmp
           git reset --hard
 
-          git checkout main -- package.json package-lock.json prisma.config.ts prisma
+          git checkout main -- package.json package-lock.json prisma
 
           mv /tmp/dist dist
 
-          git add -f dist package.json package-lock.json prisma.config.ts prisma
+          git add -f dist package.json package-lock.json prisma
           git commit -m "Deploy ${{ github.sha }}"
 
           git branch -D deploy 2>/dev/null || true

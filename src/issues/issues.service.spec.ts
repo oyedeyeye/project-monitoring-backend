@@ -16,9 +16,14 @@ describe('IssuesService', () => {
           useValue: {
             issue: {
               findMany: jest.fn(),
+              // Used by the ownership pre-check on write paths.
+              findFirst: jest.fn(),
               create: jest.fn(),
               update: jest.fn(),
               delete: jest.fn(),
+            },
+            project: {
+              findFirst: jest.fn(),
             },
           },
         },
@@ -86,10 +91,86 @@ describe('IssuesService', () => {
       const mockCreatedIssue = { id: '1', ...mockDto };
       (prismaService.issue.create as jest.Mock).mockResolvedValue(mockCreatedIssue);
 
-      const result = await service.create(mockDto);
+      const user = { role: Role.WEBMASTER_ADMIN };
+      const result = await service.create(mockDto, user as any);
       expect(result).toEqual(mockCreatedIssue);
       expect(prismaService.issue.create).toHaveBeenCalledWith({
         data: mockDto,
+      });
+    });
+
+    it('should reject an MDA_OFFICER logging an issue against another MDA project', async () => {
+      (prismaService.project.findFirst as jest.Mock).mockResolvedValue(null);
+
+      const mockDto = { projectId: 'other-mda-project' } as Prisma.IssueUncheckedCreateInput;
+      const user = { role: Role.MDA_OFFICER, mdaId: 'mda1' };
+
+      await expect(service.create(mockDto, user as any)).rejects.toThrow(
+        'Project not found or access denied',
+      );
+      expect(prismaService.issue.create).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('ownership enforcement on writes', () => {
+    it('should let an MDA_OFFICER update an issue in their own MDA', async () => {
+      (prismaService.issue.findFirst as jest.Mock).mockResolvedValue({ id: '1' });
+      (prismaService.issue.update as jest.Mock).mockResolvedValue({ id: '1' });
+
+      const user = { role: Role.MDA_OFFICER, mdaId: 'mda1' };
+      await service.update('1', { status: 'Resolved' }, user as any);
+
+      expect(prismaService.issue.findFirst).toHaveBeenCalledWith({
+        where: { id: '1', project: { mdaId: 'mda1' } },
+      });
+      expect(prismaService.issue.update).toHaveBeenCalledWith({
+        where: { id: '1' },
+        data: { status: 'Resolved' },
+      });
+    });
+
+    it('should 404 when an MDA_OFFICER updates another MDA issue', async () => {
+      (prismaService.issue.findFirst as jest.Mock).mockResolvedValue(null);
+
+      const user = { role: Role.MDA_OFFICER, mdaId: 'mda1' };
+      await expect(
+        service.update('other', { status: 'Resolved' }, user as any),
+      ).rejects.toThrow('Issue not found or access denied');
+      expect(prismaService.issue.update).not.toHaveBeenCalled();
+    });
+
+    it('should 404 when an MDA_OFFICER deletes another MDA issue', async () => {
+      (prismaService.issue.findFirst as jest.Mock).mockResolvedValue(null);
+
+      const user = { role: Role.MDA_OFFICER, mdaId: 'mda1' };
+      await expect(service.remove('other', user as any)).rejects.toThrow(
+        'Issue not found or access denied',
+      );
+      expect(prismaService.issue.delete).not.toHaveBeenCalled();
+    });
+
+    it('should strip projectId so an issue cannot be moved to another MDA', async () => {
+      (prismaService.issue.findFirst as jest.Mock).mockResolvedValue({ id: '1' });
+      (prismaService.issue.update as jest.Mock).mockResolvedValue({ id: '1' });
+
+      const user = { role: Role.MDA_OFFICER, mdaId: 'mda1' };
+      await service.update('1', { projectId: 'foreign-project', notes: 'x' }, user as any);
+
+      expect(prismaService.issue.update).toHaveBeenCalledWith({
+        where: { id: '1' },
+        data: { notes: 'x' },
+      });
+    });
+
+    it('should not scope an admin to a single MDA', async () => {
+      (prismaService.issue.findFirst as jest.Mock).mockResolvedValue({ id: '1' });
+      (prismaService.issue.update as jest.Mock).mockResolvedValue({ id: '1' });
+
+      const user = { role: Role.WEBMASTER_ADMIN };
+      await service.update('1', { notes: 'x' }, user as any);
+
+      expect(prismaService.issue.findFirst).toHaveBeenCalledWith({
+        where: { id: '1' },
       });
     });
   });

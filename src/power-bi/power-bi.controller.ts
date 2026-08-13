@@ -8,6 +8,9 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '@prisma/client';
 
+/** Upper bound on rows per ingestion request. Must stay >= the 1000 default. */
+const MAX_PAGE_SIZE = 5000;
+
 @ApiTags('power-bi')
 @Controller('power-bi')
 export class PowerBiController {
@@ -68,8 +71,17 @@ export class PowerBiController {
         @Query('page') pageStr?: string,
         @Query('limit') limitStr?: string,
     ) {
-        const page = pageStr ? parseInt(pageStr, 10) : 1;
-        const limit = limitStr ? parseInt(limitStr, 10) : 1000;
+        // These values are interpolated straight into `LIMIT ${limit} OFFSET
+        // ${offset}` in the service, so they must be sane integers: an
+        // unparseable value would otherwise emit `LIMIT NaN` (500), and an
+        // unbounded one would allow a full-table dump in a single request.
+        const parsedPage = parseInt(pageStr ?? '', 10);
+        const parsedLimit = parseInt(limitStr ?? '', 10);
+
+        const page = Number.isFinite(parsedPage) && parsedPage >= 1 ? parsedPage : 1;
+        let limit = Number.isFinite(parsedLimit) && parsedLimit >= 1 ? parsedLimit : 1000;
+        if (limit > MAX_PAGE_SIZE) limit = MAX_PAGE_SIZE;
+
         return this.powerBiService.getTableData(tableName, page, limit);
     }
 }

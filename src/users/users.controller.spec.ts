@@ -10,7 +10,6 @@ describe('UsersController', () => {
 
   const mockUsersService = {
     findAll: jest.fn(),
-    create: jest.fn(),
     update: jest.fn(),
     remove: jest.fn(),
   };
@@ -32,6 +31,9 @@ describe('UsersController', () => {
 
     controller = module.get<UsersController>(UsersController);
     service = module.get<UsersService>(UsersService);
+    // Required by the not.toHaveBeenCalled() assertions below; call counts
+    // would otherwise leak between tests.
+    jest.clearAllMocks();
   });
 
   it('should be defined', () => {
@@ -72,15 +74,8 @@ describe('UsersController', () => {
     });
   });
 
-  describe('create', () => {
-    it('should create a user', async () => {
-      const dto = { email: 'new@test.com', passwordHash: 'pass', role: Role.MDA_OFFICER };
-      const result = { id: '2', email: 'new@test.com' };
-      mockUsersService.create.mockResolvedValue(result);
-
-      expect(await controller.create(dto)).toBe(result);
-    });
-  });
+  // NOTE: POST /users was removed — it persisted `passwordHash` verbatim from
+  // the request body. User creation now goes through POST /auth/register only.
 
   describe('update', () => {
     it('should update a user if requesting user is WEBMASTER_ADMIN', async () => {
@@ -91,7 +86,7 @@ describe('UsersController', () => {
       mockUsersService.update.mockResolvedValue(result);
 
       const req = { user: { role: Role.WEBMASTER_ADMIN } };
-      expect(await controller.update(req, '1', dto)).toBe(result);
+      expect(await controller.update(req, '1', dto)).toEqual(result);
     });
 
     it('should update a user if requesting user is PPIMU_ADMIN and target is MDA_OFFICER', async () => {
@@ -102,7 +97,65 @@ describe('UsersController', () => {
       mockUsersService.update.mockResolvedValue(result);
 
       const req = { user: { role: Role.PPIMU_ADMIN } };
-      expect(await controller.update(req, '1', dto)).toBe(result);
+      expect(await controller.update(req, '1', dto)).toEqual(result);
+    });
+
+    it('should forbid a PPIMU_ADMIN from promoting an MDA_OFFICER to a higher role', async () => {
+      const dto = { role: Role.WEBMASTER_ADMIN };
+      const targetUser = { id: '1', email: 'target@test.com', profile: { role: Role.MDA_OFFICER } };
+      mockUsersService.findById = jest.fn().mockResolvedValue(targetUser);
+      mockUsersService.update.mockResolvedValue({ id: '1' });
+
+      const req = { user: { role: Role.PPIMU_ADMIN } };
+      await expect(controller.update(req, '1', dto)).rejects.toThrow(
+        'You can only assign the MDA Officer role',
+      );
+      expect(mockUsersService.update).not.toHaveBeenCalled();
+    });
+
+    it('should allow a WEBMASTER_ADMIN to change roles', async () => {
+      const dto = { role: Role.WEBMASTER_ADMIN };
+      const targetUser = { id: '1', email: 'target@test.com', profile: { role: Role.MDA_OFFICER } };
+      mockUsersService.findById = jest.fn().mockResolvedValue(targetUser);
+      mockUsersService.update.mockResolvedValue({ id: '1' });
+
+      const req = { user: { role: Role.WEBMASTER_ADMIN } };
+      await controller.update(req, '1', dto);
+
+      expect(mockUsersService.update).toHaveBeenCalledWith('1', {
+        profile: { update: { role: Role.WEBMASTER_ADMIN } },
+      });
+    });
+
+    it('should never expose passwordHash or reset token in the response', async () => {
+      const targetUser = { id: '1', email: 'target@test.com', profile: { role: Role.MDA_OFFICER } };
+      mockUsersService.findById = jest.fn().mockResolvedValue(targetUser);
+      mockUsersService.update.mockResolvedValue({
+        id: '1',
+        email: 'target@test.com',
+        passwordHash: '$2b$10$notarealhash',
+        resetPasswordToken: 'sha256digest',
+        resetPasswordExpires: new Date(),
+      });
+
+      const req = { user: { role: Role.WEBMASTER_ADMIN } };
+      const response: any = await controller.update(req, '1', { email: 'target@test.com' });
+
+      expect(response).not.toHaveProperty('passwordHash');
+      expect(response).not.toHaveProperty('resetPasswordToken');
+      expect(response).not.toHaveProperty('resetPasswordExpires');
+      expect(response.email).toBe('target@test.com');
+    });
+
+    it('should ignore client-supplied passwordHash (no raw Prisma passthrough)', async () => {
+      const targetUser = { id: '1', email: 'target@test.com', profile: { role: Role.MDA_OFFICER } };
+      mockUsersService.findById = jest.fn().mockResolvedValue(targetUser);
+      mockUsersService.update.mockResolvedValue({ id: '1' });
+
+      const req = { user: { role: Role.WEBMASTER_ADMIN } };
+      await controller.update(req, '1', { passwordHash: 'attacker-chosen' } as any);
+
+      expect(mockUsersService.update).toHaveBeenCalledWith('1', {});
     });
 
     it('should throw ForbiddenException if requesting user is PPIMU_ADMIN and target is not MDA_OFFICER', async () => {
@@ -141,7 +194,7 @@ describe('UsersController', () => {
       mockUsersService.remove.mockResolvedValue(result);
 
       const req = { user: { role: Role.WEBMASTER_ADMIN } };
-      expect(await controller.remove(req, '1')).toBe(result);
+      expect(await controller.remove(req, '1')).toEqual(result);
     });
 
     it('should remove a user if requesting user is PPIMU_ADMIN and target is MDA_OFFICER', async () => {
@@ -151,7 +204,7 @@ describe('UsersController', () => {
       mockUsersService.remove.mockResolvedValue(result);
 
       const req = { user: { role: Role.PPIMU_ADMIN } };
-      expect(await controller.remove(req, '1')).toBe(result);
+      expect(await controller.remove(req, '1')).toEqual(result);
     });
 
     it('should throw ForbiddenException on remove if requesting user is PPIMU_ADMIN and target is not MDA_OFFICER', async () => {

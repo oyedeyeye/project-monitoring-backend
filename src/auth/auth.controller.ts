@@ -1,6 +1,11 @@
-import { Controller, Post, Body, UnauthorizedException, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Body, UnauthorizedException, HttpCode, HttpStatus, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
+import { Role } from '@prisma/client';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { RolesGuard } from './guards/roles.guard';
+import { Roles } from './decorators/roles.decorator';
+import { RegisterDto } from './dto/register.dto';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -21,12 +26,19 @@ export class AuthController {
         return this.authService.login(user);
     }
 
+    // Administrative user provisioning — NOT public self-registration.
+    // Guarded at handler level so login/forgot-password/reset-password stay open.
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(Role.WEBMASTER_ADMIN)
+    @ApiBearerAuth()
     @Post('register')
-    @ApiOperation({ summary: 'Register a new user' })
-    @ApiBody({ schema: { type: 'object', properties: { email: { type: 'string' }, fullName: { type: 'string' }, role: { type: 'string', enum: ['WEBMASTER_ADMIN', 'PPIMU_ADMIN', 'MDA_OFFICER'] }, mdaId: { type: 'string', nullable: true } } } })
+    @ApiOperation({ summary: 'Create a new user (Webmaster Admin only)' })
+    @ApiBody({ type: RegisterDto })
     @ApiResponse({ status: 201, description: 'User successfully created and setup email sent' })
+    @ApiResponse({ status: 401, description: 'Unauthorized / Missing token' })
+    @ApiResponse({ status: 403, description: 'Forbidden / Invalid Role' })
     @ApiResponse({ status: 409, description: 'User with this email already exists' })
-    async register(@Body() registerDto: Record<string, any>) {
+    async register(@Body() registerDto: RegisterDto) {
         return this.authService.register(registerDto);
     }
 

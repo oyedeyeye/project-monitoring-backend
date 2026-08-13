@@ -1,7 +1,6 @@
 import {
   Controller,
   Get,
-  Post,
   Put,
   Delete,
   Body,
@@ -29,6 +28,7 @@ import {
 } from '@nestjs/swagger';
 import * as bcrypt from 'bcrypt';
 import { UserScopedCacheInterceptor } from '../common/interceptors/user-scoped-cache.interceptor';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @ApiTags('users')
 @ApiBearerAuth()
@@ -37,6 +37,20 @@ import { UserScopedCacheInterceptor } from '../common/interceptors/user-scoped-c
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
+
+  /**
+   * Prisma returns the full row, including the bcrypt hash and the reset-token
+   * digest. Neither belongs in an HTTP response.
+   */
+  private sanitize<T extends Record<string, any>>(user: T) {
+    const {
+      passwordHash: _passwordHash,
+      resetPasswordToken: _resetPasswordToken,
+      resetPasswordExpires: _resetPasswordExpires,
+      ...safe
+    } = user;
+    return safe;
+  }
 
   @Roles(Role.WEBMASTER_ADMIN, Role.PPIMU_ADMIN)
   @Get()
@@ -73,39 +87,23 @@ export class UsersController {
     return this.usersService.findAll({ page, limit, role });
   }
 
-  @Roles(Role.WEBMASTER_ADMIN, Role.PPIMU_ADMIN)
-  @Post()
-  @ApiOperation({ summary: 'Create a new user manually' })
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        email: { type: 'string' },
-        passwordHash: { type: 'string' },
-        profile: { type: 'object' },
-      },
-    },
-  })
-  @ApiResponse({ status: 201, description: 'User successfully created' })
-  @ApiResponse({ status: 401, description: 'Unauthorized / Missing token' })
-  @ApiResponse({ status: 403, description: 'Forbidden / Invalid Role' })
-  create(@Body() createUserDto: Prisma.UserCreateInput) {
-    return this.usersService.create(createUserDto);
-  }
+  // NOTE: POST /users was removed. It accepted a raw Prisma.UserCreateInput
+  // and persisted `passwordHash` verbatim from the request body (no bcrypt),
+  // and had no PPIMU_ADMIN target-role restriction. All user provisioning now
+  // goes through POST /auth/register, which hashes and sends onboarding mail.
 
   @Roles(Role.WEBMASTER_ADMIN, Role.PPIMU_ADMIN)
   @Put(':id')
   @ApiOperation({ summary: 'Update an existing user' })
   @ApiParam({ name: 'id', description: 'User UUID' })
-  @ApiBody({
-    schema: { type: 'object', properties: { email: { type: 'string' } } },
-  })
+  @ApiBody({ type: UpdateUserDto })
   @ApiResponse({ status: 200, description: 'User successfully updated' })
+  @ApiResponse({ status: 403, description: 'Forbidden / Invalid Role' })
   @ApiResponse({ status: 404, description: 'User not found' })
   async update(
     @Req() req: any,
     @Param('id') id: string,
-    @Body() updateUserDto: Prisma.UserUpdateInput,
+    @Body() updateUserDto: UpdateUserDto,
   ) {
     const targetUser = (await this.usersService.findById(id)) as any;
     if (!targetUser) {
@@ -121,15 +119,40 @@ export class UsersController {
       );
     }
 
-    const data = { ...updateUserDto } as any;
-    if (data.password && data.password.trim() !== '') {
-      data.passwordHash = await bcrypt.hash(data.password, 10);
-      delete data.password;
-    } else {
-      delete data.password;
+    // A PPIMU_ADMIN may edit MDA Officers but must not be able to promote one
+    // (or themselves, via another account) to a higher role.
+    if (
+      req.user.role === Role.PPIMU_ADMIN &&
+      updateUserDto.role &&
+      updateUserDto.role !== Role.MDA_OFFICER
+    ) {
+      throw new ForbiddenException(
+        'You can only assign the MDA Officer role',
+      );
     }
 
-    return this.usersService.update(id, data);
+    const { email, fullName, role, mdaId, password } = updateUserDto;
+
+    // Build the Prisma payload here rather than accepting one from the client,
+    // so only these five fields are ever writable.
+    const data: Prisma.UserUpdateInput = {};
+    if (email !== undefined) data.email = email;
+    if (password) data.passwordHash = await bcrypt.hash(password, 10);
+
+    const profileData: Prisma.UserProfileUpdateWithoutUserInput = {};
+    if (fullName !== undefined) profileData.fullName = fullName;
+    if (role !== undefined) profileData.role = role;
+    if (mdaId !== undefined) {
+      profileData.mda = mdaId
+        ? { connect: { id: mdaId } }
+        : { disconnect: true };
+    }
+    if (Object.keys(profileData).length > 0) {
+      data.profile = { update: profileData };
+    }
+
+    const updated = await this.usersService.update(id, data);
+    return this.sanitize(updated);
   }
 
   @Roles(Role.WEBMASTER_ADMIN, Role.PPIMU_ADMIN)
@@ -153,6 +176,7 @@ export class UsersController {
       );
     }
 
-    return this.usersService.remove(id);
+    const removed = await this.usersService.remove(id);
+    return this.sanitize(removed);
   }
 }

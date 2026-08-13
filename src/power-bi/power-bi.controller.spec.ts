@@ -86,9 +86,35 @@ describe('PowerBiController', () => {
             mockPowerBiService.getTableData.mockResolvedValue({ data: [], meta: { page: 3, limit: 50 } });
             
             const res = await controller.getTableData('Project', '3', '50');
-            
+
             expect(res).toEqual({ data: [], meta: { page: 3, limit: 50 } });
             expect(service.getTableData).toHaveBeenCalledWith('Project', 3, 50);
+        });
+
+        // These values are interpolated into a raw SQL LIMIT/OFFSET clause,
+        // so they must never reach the service unvalidated.
+        it('should fall back to defaults for unparseable pagination', async () => {
+            mockPowerBiService.getTableData.mockResolvedValue({ data: [], meta: {} });
+
+            await controller.getTableData('MDA', 'abc', 'def');
+
+            expect(service.getTableData).toHaveBeenCalledWith('MDA', 1, 1000);
+        });
+
+        it('should reject zero and negative pagination values', async () => {
+            mockPowerBiService.getTableData.mockResolvedValue({ data: [], meta: {} });
+
+            await controller.getTableData('MDA', '0', '-1');
+
+            expect(service.getTableData).toHaveBeenCalledWith('MDA', 1, 1000);
+        });
+
+        it('should cap limit to prevent a full-table dump', async () => {
+            mockPowerBiService.getTableData.mockResolvedValue({ data: [], meta: {} });
+
+            await controller.getTableData('Project', '1', '99999999');
+
+            expect(service.getTableData).toHaveBeenCalledWith('Project', 1, 5000);
         });
     });
 });

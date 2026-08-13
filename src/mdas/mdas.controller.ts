@@ -4,10 +4,10 @@ import { Prisma, Role } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
-import { CacheInterceptor } from '@nestjs/cache-manager';
+import { UserScopedCacheInterceptor } from '../common/interceptors/user-scoped-cache.interceptor';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
-@UseInterceptors(CacheInterceptor)
+@UseInterceptors(UserScopedCacheInterceptor)
 @Controller('mdas')
 export class MdasController {
     constructor(private readonly mdasService: MdasService) { }

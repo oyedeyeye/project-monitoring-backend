@@ -6,12 +6,12 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse, ApiBody, ApiParam, ApiQuery } from '@nestjs/swagger';
 import * as bcrypt from 'bcrypt';
-import { CacheInterceptor } from '@nestjs/cache-manager';
+import { UserScopedCacheInterceptor } from '../common/interceptors/user-scoped-cache.interceptor';
 
 @ApiTags('users')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@UseInterceptors(CacheInterceptor)
+@UseInterceptors(UserScopedCacheInterceptor)
 @Controller('users')
 export class UsersController {
     constructor(private readonly usersService: UsersService) { }

@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ProjectsService } from './projects.service';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -14,11 +15,16 @@ describe('ProjectsService', () => {
     },
   };
 
+  const mockCacheManager = {
+    clear: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ProjectsService,
         { provide: PrismaService, useValue: mockPrismaService },
+        { provide: CACHE_MANAGER, useValue: mockCacheManager },
       ],
     }).compile();
 

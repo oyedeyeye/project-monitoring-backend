@@ -1,13 +1,20 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma, MDA } from '@prisma/client';
 
 @Injectable()
 export class MdasService {
-    constructor(private prisma: PrismaService) { }
+    constructor(
+        private prisma: PrismaService,
+        @Inject(CACHE_MANAGER) private cacheManager: Cache,
+    ) { }
 
     async create(data: Prisma.MDACreateInput): Promise<MDA> {
-        return this.prisma.mDA.create({ data });
+        const mda = await this.prisma.mDA.create({ data });
+        await this.cacheManager.clear();
+        return mda;
     }
 
     async findAll() {
@@ -47,15 +54,19 @@ export class MdasService {
     }
 
     async update(id: string, data: Prisma.MDAUpdateInput): Promise<MDA> {
-        return this.prisma.mDA.update({
+        const mda = await this.prisma.mDA.update({
             where: { id },
             data,
         });
+        await this.cacheManager.clear();
+        return mda;
     }
 
     async remove(id: string): Promise<MDA> {
-        return this.prisma.mDA.delete({
+        const mda = await this.prisma.mDA.delete({
             where: { id },
         });
+        await this.cacheManager.clear();
+        return mda;
     }
 }

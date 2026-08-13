@@ -1,10 +1,15 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma, User, Role } from '@prisma/client';
 
 @Injectable()
 export class UsersService {
-    constructor(private prisma: PrismaService) { }
+    constructor(
+        private prisma: PrismaService,
+        @Inject(CACHE_MANAGER) private cacheManager: Cache,
+    ) { }
 
     async findByEmail(email: string): Promise<User | null> {
         return this.prisma.user.findUnique({
@@ -21,10 +26,12 @@ export class UsersService {
     }
 
     async create(data: Prisma.UserCreateInput): Promise<User> {
-        return this.prisma.user.create({
+        const user = await this.prisma.user.create({
             data,
             include: { profile: true },
         });
+        await this.cacheManager.clear();
+        return user;
     }
 
     async findById(id: string): Promise<User | null> {
@@ -105,17 +112,21 @@ export class UsersService {
     }
 
     async update(id: string, data: Prisma.UserUpdateInput): Promise<User> {
-        return this.prisma.user.update({
+        const user = await this.prisma.user.update({
             where: { id },
             data,
             include: { profile: true },
         });
+        await this.cacheManager.clear();
+        return user;
     }
 
     async remove(id: string): Promise<User> {
-        return this.prisma.user.delete({
+        const user = await this.prisma.user.delete({
             where: { id },
             include: { profile: true },
         });
+        await this.cacheManager.clear();
+        return user;
     }
 }

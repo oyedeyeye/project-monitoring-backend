@@ -1,4 +1,6 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma, Project, Role } from '@prisma/client';
 import { CreateProjectDto } from './dto/create-project.dto';
@@ -8,10 +10,15 @@ const csvParser = require('csv-parser');
 
 @Injectable()
 export class ProjectsService {
-    constructor(private prisma: PrismaService) { }
+    constructor(
+        private prisma: PrismaService,
+        @Inject(CACHE_MANAGER) private cacheManager: Cache,
+    ) { }
 
     async create(data: CreateProjectDto): Promise<Project> {
-        return this.prisma.project.create({ data: data as any });
+        const project = await this.prisma.project.create({ data: data as any });
+        await this.cacheManager.clear();
+        return project;
     }
 
     async findAll(params?: { mdaId?: string; status?: string; lga?: string; page?: number; limit?: number }): Promise<{ data: Project[]; meta: { total: number; page: number; limit: number; totalPages: number } }> {
@@ -69,16 +76,20 @@ export class ProjectsService {
     }
 
     async update(id: string, data: UpdateProjectDto): Promise<Project> {
-        return this.prisma.project.update({
+        const project = await this.prisma.project.update({
             where: { projectId: id },
             data: data as any,
         });
+        await this.cacheManager.clear();
+        return project;
     }
 
     async remove(id: string): Promise<Project> {
-        return this.prisma.project.delete({
+        const project = await this.prisma.project.delete({
             where: { projectId: id },
         });
+        await this.cacheManager.clear();
+        return project;
     }
 
     async getArchivedByYear(year: number): Promise<Project[]> {
@@ -190,6 +201,8 @@ export class ProjectsService {
         await this.prisma.$transaction(
             projectsToInsert.map(projectData => this.prisma.project.create({ data: projectData }))
         );
+
+        await this.cacheManager.clear();
 
         return { importedCount: projectsToInsert.length };
     }

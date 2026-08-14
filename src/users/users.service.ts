@@ -92,15 +92,8 @@ export class UsersService {
           lastEditDate = mdaLastUpdate;
         }
       }
-      // Never expose the bcrypt hash or the reset-token digest over HTTP.
-      const {
-        passwordHash: _passwordHash,
-        resetPasswordToken: _resetPasswordToken,
-        resetPasswordExpires: _resetPasswordExpires,
-        ...safeUser
-      } = user;
       return {
-        ...safeUser,
+        ...user,
         lastEditActivityDate: lastEditDate,
       };
     });

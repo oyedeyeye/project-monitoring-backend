@@ -5,7 +5,7 @@ import helmet from 'helmet';
 import { ValidationPipe } from '@nestjs/common';
 import * as express from 'express';
 
-async function bootstrap() {
+async function bootstrap () {
   const app = await NestFactory.create(AppModule);
 
   // Hardening: Enable Helmet for secure HTTP headers
@@ -23,11 +23,11 @@ async function bootstrap() {
 
   app.enableCors({
     origin: [
-      'https://ppimu.ondostate.gov.ng',
-      'http://ppimu.ondostate.gov.ng',
-      'https://project-monitoring-dashboard-hazel.vercel.app',
-      'http://localhost:5173', // Keep local dev access if needed
-      'http://localhost:3000'
+      'https://ppimu.ondostate.gov.ng/',
+      'http://ppimu.ondostate.gov.ng/',
+      'https://project-monitoring-dashboard-hazel.vercel.app/',
+      'http://localhost:5173/', // Keep local dev access if needed
+      'http://localhost:3000/'
     ],
     credentials: false,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',

@@ -93,9 +93,8 @@ let UsersService = class UsersService {
                     lastEditDate = mdaLastUpdate;
                 }
             }
-            const { passwordHash: _passwordHash, resetPasswordToken: _resetPasswordToken, resetPasswordExpires: _resetPasswordExpires, ...safeUser } = user;
             return {
-                ...safeUser,
+                ...user,
                 lastEditActivityDate: lastEditDate,
             };
         });

@@ -1,9 +1,8 @@
 import { UsersService } from './users.service';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { Prisma } from '@prisma/client';
 export declare class UsersController {
     private readonly usersService;
     constructor(usersService: UsersService);
-    private sanitize;
     findAll(req: any, pageStr?: string, limitStr?: string, roleStr?: string): Promise<{
         data: {
             lastEditActivityDate: Date;
@@ -26,8 +25,11 @@ export declare class UsersController {
             }) | null;
             id: string;
             email: string;
+            passwordHash: string;
             createdAt: Date;
             updatedAt: Date;
+            resetPasswordExpires: Date | null;
+            resetPasswordToken: string | null;
         }[];
         meta: {
             total: number;
@@ -36,7 +38,7 @@ export declare class UsersController {
             totalPages: number;
         };
     }>;
-    update(req: any, id: string, updateUserDto: UpdateUserDto): Promise<Omit<{
+    create(createUserDto: Prisma.UserCreateInput): Promise<{
         id: string;
         email: string;
         passwordHash: string;
@@ -44,8 +46,8 @@ export declare class UsersController {
         updatedAt: Date;
         resetPasswordExpires: Date | null;
         resetPasswordToken: string | null;
-    }, "passwordHash" | "resetPasswordExpires" | "resetPasswordToken">>;
-    remove(req: any, id: string): Promise<Omit<{
+    }>;
+    update(req: any, id: string, updateUserDto: Prisma.UserUpdateInput): Promise<{
         id: string;
         email: string;
         passwordHash: string;
@@ -53,5 +55,14 @@ export declare class UsersController {
         updatedAt: Date;
         resetPasswordExpires: Date | null;
         resetPasswordToken: string | null;
-    }, "passwordHash" | "resetPasswordExpires" | "resetPasswordToken">>;
+    }>;
+    remove(req: any, id: string): Promise<{
+        id: string;
+        email: string;
+        passwordHash: string;
+        createdAt: Date;
+        updatedAt: Date;
+        resetPasswordExpires: Date | null;
+        resetPasswordToken: string | null;
+    }>;
 }

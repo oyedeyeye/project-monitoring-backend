@@ -56,15 +56,10 @@ const roles_decorator_1 = require("../auth/decorators/roles.decorator");
 const swagger_1 = require("@nestjs/swagger");
 const bcrypt = __importStar(require("bcrypt"));
 const user_scoped_cache_interceptor_1 = require("../common/interceptors/user-scoped-cache.interceptor");
-const update_user_dto_1 = require("./dto/update-user.dto");
 let UsersController = class UsersController {
     usersService;
     constructor(usersService) {
         this.usersService = usersService;
-    }
-    sanitize(user) {
-        const { passwordHash: _passwordHash, resetPasswordToken: _resetPasswordToken, resetPasswordExpires: _resetPasswordExpires, ...safe } = user;
-        return safe;
     }
     findAll(req, pageStr, limitStr, roleStr) {
         const page = pageStr ? parseInt(pageStr, 10) : 1;
@@ -76,6 +71,9 @@ let UsersController = class UsersController {
         }
         return this.usersService.findAll({ page, limit, role });
     }
+    create(createUserDto) {
+        return this.usersService.create(createUserDto);
+    }
     async update(req, id, updateUserDto) {
         const targetUser = (await this.usersService.findById(id));
         if (!targetUser) {
@@ -85,32 +83,15 @@ let UsersController = class UsersController {
             targetUser.profile?.role !== client_1.Role.MDA_OFFICER) {
             throw new common_1.ForbiddenException('You can only perform operations on MDA Officers');
         }
-        if (req.user.role === client_1.Role.PPIMU_ADMIN &&
-            updateUserDto.role &&
-            updateUserDto.role !== client_1.Role.MDA_OFFICER) {
-            throw new common_1.ForbiddenException('You can only assign the MDA Officer role');
+        const data = { ...updateUserDto };
+        if (data.password && data.password.trim() !== '') {
+            data.passwordHash = await bcrypt.hash(data.password, 10);
+            delete data.password;
         }
-        const { email, fullName, role, mdaId, password } = updateUserDto;
-        const data = {};
-        if (email !== undefined)
-            data.email = email;
-        if (password)
-            data.passwordHash = await bcrypt.hash(password, 10);
-        const profileData = {};
-        if (fullName !== undefined)
-            profileData.fullName = fullName;
-        if (role !== undefined)
-            profileData.role = role;
-        if (mdaId !== undefined) {
-            profileData.mda = mdaId
-                ? { connect: { id: mdaId } }
-                : { disconnect: true };
+        else {
+            delete data.password;
         }
-        if (Object.keys(profileData).length > 0) {
-            data.profile = { update: profileData };
-        }
-        const updated = await this.usersService.update(id, data);
-        return this.sanitize(updated);
+        return this.usersService.update(id, data);
     }
     async remove(req, id) {
         const targetUser = (await this.usersService.findById(id));
@@ -121,8 +102,7 @@ let UsersController = class UsersController {
             targetUser.profile?.role !== client_1.Role.MDA_OFFICER) {
             throw new common_1.ForbiddenException('You can only perform operations on MDA Officers');
         }
-        const removed = await this.usersService.remove(id);
-        return this.sanitize(removed);
+        return this.usersService.remove(id);
     }
 };
 exports.UsersController = UsersController;
@@ -154,18 +134,41 @@ __decorate([
 ], UsersController.prototype, "findAll", null);
 __decorate([
     (0, roles_decorator_1.Roles)(client_1.Role.WEBMASTER_ADMIN, client_1.Role.PPIMU_ADMIN),
+    (0, common_1.Post)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Create a new user manually' }),
+    (0, swagger_1.ApiBody)({
+        schema: {
+            type: 'object',
+            properties: {
+                email: { type: 'string' },
+                passwordHash: { type: 'string' },
+                profile: { type: 'object' },
+            },
+        },
+    }),
+    (0, swagger_1.ApiResponse)({ status: 201, description: 'User successfully created' }),
+    (0, swagger_1.ApiResponse)({ status: 401, description: 'Unauthorized / Missing token' }),
+    (0, swagger_1.ApiResponse)({ status: 403, description: 'Forbidden / Invalid Role' }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], UsersController.prototype, "create", null);
+__decorate([
+    (0, roles_decorator_1.Roles)(client_1.Role.WEBMASTER_ADMIN, client_1.Role.PPIMU_ADMIN),
     (0, common_1.Put)(':id'),
     (0, swagger_1.ApiOperation)({ summary: 'Update an existing user' }),
     (0, swagger_1.ApiParam)({ name: 'id', description: 'User UUID' }),
-    (0, swagger_1.ApiBody)({ type: update_user_dto_1.UpdateUserDto }),
+    (0, swagger_1.ApiBody)({
+        schema: { type: 'object', properties: { email: { type: 'string' } } },
+    }),
     (0, swagger_1.ApiResponse)({ status: 200, description: 'User successfully updated' }),
-    (0, swagger_1.ApiResponse)({ status: 403, description: 'Forbidden / Invalid Role' }),
     (0, swagger_1.ApiResponse)({ status: 404, description: 'User not found' }),
     __param(0, (0, common_1.Req)()),
     __param(1, (0, common_1.Param)('id')),
     __param(2, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, String, update_user_dto_1.UpdateUserDto]),
+    __metadata("design:paramtypes", [Object, String, Object]),
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "update", null);
 __decorate([

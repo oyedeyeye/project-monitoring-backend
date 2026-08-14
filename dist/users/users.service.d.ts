@@ -35,8 +35,11 @@ export declare class UsersService {
             }) | null;
             id: string;
             email: string;
+            passwordHash: string;
             createdAt: Date;
             updatedAt: Date;
+            resetPasswordExpires: Date | null;
+            resetPasswordToken: string | null;
         }[];
         meta: {
             total: number;

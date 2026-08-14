@@ -8,8 +8,10 @@ import * as express from 'express';
 async function bootstrap () {
   const app = await NestFactory.create(AppModule);
 
-  // Hardening: Enable Helmet for secure HTTP headers
-  app.use(helmet());
+  // Hardening: Enable Helmet for secure HTTP headers, but allow cross-origin requests
+  app.use(helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+  }));
 
   // Middleware to normalize URL paths by collapsing multiple slashes (e.g. //power-bi -> /power-bi)
   app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -23,11 +25,11 @@ async function bootstrap () {
 
   app.enableCors({
     origin: [
-      'https://ppimu.ondostate.gov.ng/',
-      'http://ppimu.ondostate.gov.ng/',
-      'https://project-monitoring-dashboard-hazel.vercel.app/',
-      'http://localhost:5173/', // Keep local dev access if needed
-      'http://localhost:3000/'
+      'https://ppimu.ondostate.gov.ng',
+      'http://ppimu.ondostate.gov.ng',
+      'https://project-monitoring-dashboard-hazel.vercel.app',
+      'http://localhost:5173', // Keep local dev access if needed
+      'http://localhost:3000'
     ],
     credentials: false,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',

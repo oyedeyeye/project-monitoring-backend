@@ -1,0 +1,86 @@
+import { IssuesService } from './issues.service';
+import { Prisma } from '@prisma/client';
+export declare class IssuesController {
+    private readonly issuesService;
+    constructor(issuesService: IssuesService);
+    create(req: any, createIssueDto: Prisma.IssueUncheckedCreateInput): Promise<{
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        projectId: string;
+        status: string;
+        logDate: Date;
+        issueCategory: string;
+        issueItem: string;
+        severity: number;
+        owner: string;
+        dueDate: Date;
+        notes: string;
+        followUp: string | null;
+        progressUpdateId: string | null;
+    }>;
+    findAll(req: any, projectId?: string): Promise<{
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        projectId: string;
+        status: string;
+        logDate: Date;
+        issueCategory: string;
+        issueItem: string;
+        severity: number;
+        owner: string;
+        dueDate: Date;
+        notes: string;
+        followUp: string | null;
+        progressUpdateId: string | null;
+    }[]>;
+    update(req: any, id: string, updateIssueDto: Prisma.IssueUncheckedUpdateInput): Promise<{
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        projectId: string;
+        status: string;
+        logDate: Date;
+        issueCategory: string;
+        issueItem: string;
+        severity: number;
+        owner: string;
+        dueDate: Date;
+        notes: string;
+        followUp: string | null;
+        progressUpdateId: string | null;
+    }>;
+    resolve(req: any, id: string): Promise<{
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        projectId: string;
+        status: string;
+        logDate: Date;
+        issueCategory: string;
+        issueItem: string;
+        severity: number;
+        owner: string;
+        dueDate: Date;
+        notes: string;
+        followUp: string | null;
+        progressUpdateId: string | null;
+    }>;
+    remove(req: any, id: string): Promise<{
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        projectId: string;
+        status: string;
+        logDate: Date;
+        issueCategory: string;
+        issueItem: string;
+        severity: number;
+        owner: string;
+        dueDate: Date;
+        notes: string;
+        followUp: string | null;
+        progressUpdateId: string | null;
+    }>;
+}

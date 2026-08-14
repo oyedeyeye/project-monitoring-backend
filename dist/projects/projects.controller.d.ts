@@ -1,0 +1,110 @@
+import { ProjectsService } from './projects.service';
+import { CreateProjectDto } from './dto/create-project.dto';
+import { UpdateProjectDto } from './dto/update-project.dto';
+export declare class ProjectsController {
+    private readonly projectsService;
+    constructor(projectsService: ProjectsService);
+    create(createProjectDto: CreateProjectDto): Promise<{
+        createdAt: Date;
+        updatedAt: Date;
+        mdaId: string;
+        projectId: string;
+        status: string;
+        title: string;
+        sector: string;
+        lga: string;
+        senatorialDistrict: string;
+        locationText: string;
+        startDate: Date;
+        endDate: Date;
+        approvedBudget: import("@prisma/client-runtime-utils").Decimal;
+        fundingSource: string;
+        contractor: string | null;
+        isArchived: boolean;
+    }>;
+    getImportTemplate(): Promise<string>;
+    importCsv(file: any): Promise<{
+        importedCount: number;
+    }>;
+    findAll(req: any, mdaId?: string, status?: string, pageStr?: string, limitStr?: string, lga?: string): Promise<{
+        data: import("@prisma/client").Project[];
+        meta: {
+            total: number;
+            page: number;
+            limit: number;
+            totalPages: number;
+        };
+    }>;
+    getArchivedByYear(year: string): Promise<{
+        createdAt: Date;
+        updatedAt: Date;
+        mdaId: string;
+        projectId: string;
+        status: string;
+        title: string;
+        sector: string;
+        lga: string;
+        senatorialDistrict: string;
+        locationText: string;
+        startDate: Date;
+        endDate: Date;
+        approvedBudget: import("@prisma/client-runtime-utils").Decimal;
+        fundingSource: string;
+        contractor: string | null;
+        isArchived: boolean;
+    }[]>;
+    findOne(id: string, req: any): Promise<{
+        createdAt: Date;
+        updatedAt: Date;
+        mdaId: string;
+        projectId: string;
+        status: string;
+        title: string;
+        sector: string;
+        lga: string;
+        senatorialDistrict: string;
+        locationText: string;
+        startDate: Date;
+        endDate: Date;
+        approvedBudget: import("@prisma/client-runtime-utils").Decimal;
+        fundingSource: string;
+        contractor: string | null;
+        isArchived: boolean;
+    }>;
+    update(id: string, updateProjectDto: UpdateProjectDto): Promise<{
+        createdAt: Date;
+        updatedAt: Date;
+        mdaId: string;
+        projectId: string;
+        status: string;
+        title: string;
+        sector: string;
+        lga: string;
+        senatorialDistrict: string;
+        locationText: string;
+        startDate: Date;
+        endDate: Date;
+        approvedBudget: import("@prisma/client-runtime-utils").Decimal;
+        fundingSource: string;
+        contractor: string | null;
+        isArchived: boolean;
+    }>;
+    remove(id: string): Promise<{
+        createdAt: Date;
+        updatedAt: Date;
+        mdaId: string;
+        projectId: string;
+        status: string;
+        title: string;
+        sector: string;
+        lga: string;
+        senatorialDistrict: string;
+        locationText: string;
+        startDate: Date;
+        endDate: Date;
+        approvedBudget: import("@prisma/client-runtime-utils").Decimal;
+        fundingSource: string;
+        contractor: string | null;
+        isArchived: boolean;
+    }>;
+}
